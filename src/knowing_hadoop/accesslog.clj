@@ -1,5 +1,5 @@
 (ns knowing-hadoop.accesslog
-  )
+  (:use knowing-hadoop.rule))
 
 ; '$request_time $upstream_response_time $remote_addr $request_length $upstream_addr  [$time_local] '
 ; '$host "$request_method $request_url $request_protocol" $status $bytes_send '
@@ -9,7 +9,7 @@
                            "\"(.*?)\" \"(.*?)\" \"(.*?)\" \"(.*?)\" - \"(.*?) (.*?)\"")))
 
 (defn parse-log [log]
-  (if-let [matches (re-matches ptrn log)]
+  (when-let [matches (re-matches ptrn log)]
     {"request_time" (nth matches 1)
      "upstream_response_time" (nth matches 2)
      "remote_addr" (nth matches 3)
@@ -30,4 +30,5 @@
      "cookie_aQQ_ajkguid" (nth matches 18)}))
 
 (defn mapper [key value]
-  )
+  (when-let [log (parse-log value)]
+    (filter-log "accesslog" log)))
