@@ -1,12 +1,12 @@
 (ns knowing-hadoop.rule
-  (:require [clj-yaml.core :as yaml]))
+  (:require [knowing-hadoop.util :as util]))
 
 (defn get-datasources []
-  (let [datasources (yaml/parse-string
-                      (slurp (clojure.java.io/resource "datasources.yaml")) false)]
+  (let [datasources (util/get-config :datasources)]
     (into {} (for [[datasource fields] datasources]
-               [datasource (into {} (for [[field type] fields]
-                                      [field (keyword type)]))]))))
+               [(name datasource)
+                (into {} (for [[field type] fields]
+                           [(name field) (keyword type)]))]))))
 
 (def datasources (get-datasources))
 

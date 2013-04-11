@@ -14,4 +14,3 @@
                             ["access_log" "upstream_response_time"])))
     (is (= :string (get-in datasources
                            ["soj" "guid"])))))
-

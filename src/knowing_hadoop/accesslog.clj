@@ -31,4 +31,4 @@
 
 (defn mapper [key value]
   (when-let [log (parse-log value)]
-    (filter-log "accesslog" log)))
+    (filter-log "access_log" log)))
