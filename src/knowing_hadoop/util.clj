@@ -23,7 +23,29 @@
   ([section item]
     (get (get-config section) item)))
 
-(defn zk-client []
-  (CuratorFrameworkFactory/newClient
-    (clojure.string/join \, (get-config :zookeeper :hosts))
-    (RetryUntilElapsed. 3000 1000)))
+(def ^:private zk-framework (ref nil))
+
+(defn zk-connect []
+  (if-not @zk-framework
+    (dosync
+      (ref-set zk-framework
+               (CuratorFrameworkFactory/newClient
+                 (clojure.string/join \, (get-config :zookeeper :hosts))
+                 (RetryUntilElapsed. 3000 1000)))
+      (.start @zk-framework)))
+  @zk-framework)
+
+(defn zk-ensure! [framework path]
+  (let [client (.getZookeeperClient framework)
+        ensurePath (.newNamespaceAwareEnsurePath framework path)]
+    (.ensure ensurePath client)))
+
+(defn zk-set! [framework path data]
+  (zk-ensure! framework path)
+  (.. framework setData (forPath path (.getBytes data))))
+
+(defn zk-get [framework path]
+ (String. (.. framework getData (forPath path))))
+
+(defn zk-delete! [framework path]
+  (.. framework delete (forPath path)))
