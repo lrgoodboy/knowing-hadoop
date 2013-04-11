@@ -3,4 +3,7 @@
         knowing-hadoop.util))
 
 (deftest get-config-test
-  (is (seq (get-config :common :zookeeper-hosts))))
+  (is (get-config :common)))
+
+(deftest zk-client-test
+  (is (zk-client)))
