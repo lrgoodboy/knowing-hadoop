@@ -1,0 +1,38 @@
+---
+access_log:
+    request_time: numeric
+    upstream_response_time: numeric
+    remote_addr: string
+    request_length: numeric
+    upstream_addr: string
+    time_local: string
+    host: string
+    request_method: string
+    request_url: string
+    request_protocol: string
+    status: numeric
+    bytes_send: numeric
+    http_referer: string
+    http_user_agent: string
+    gzip_ratio: numeric
+    http_x_forwarded_for: string
+    server_addr: string
+    cookie_aQQ_ajkguid: string
+
+soj:
+    stamp: numeric
+    cstamp: numeric
+    site: string
+    url: string
+    referer: string
+    p: string
+    pn: string
+    rfpn: string
+    guid: string
+    uguid: string
+    sessid: string
+    cip: string
+    cid: numeric
+    agent: string
+    cstparam: string
+    lui: string

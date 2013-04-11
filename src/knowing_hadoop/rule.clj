@@ -1,12 +1,17 @@
 (ns knowing-hadoop.rule
-  )
+  (:require [clj-yaml.core :as yaml]))
 
-(def datasources
-  {"accesslog" {"host" :string
-                "status" :numeric}})
+(defn get-datasources []
+  (let [datasources (yaml/parse-string
+                      (slurp (clojure.java.io/resource "datasources.yaml")) false)]
+    (into {} (for [[datasource fields] datasources]
+               [datasource (into {} (for [[field type] fields]
+                                      [field (keyword type)]))]))))
 
-(def ^:dynamic *datasource*)
-(def ^:dynamic *log*)
+(def datasources (get-datasources))
+
+(declare ^:dynamic *datasource*)
+(declare ^:dynamic *log*)
 
 (defrecord Rule
   [id datasource rule-type field filters])
@@ -45,12 +50,12 @@
        :unique (get *log* (:field rule)))]))
 
 (defn get-rules []
-  [(Rule. 1 "accesslog" :count nil
+  [(Rule. 1 "access_log" :count nil
           [(Filter. "host" :str-equals true "www.anjuke.com"),
            (Filter. "status" :num-gt nil 199)]),
-   (Rule. 2 "accesslog" :unique "status"
+   (Rule. 2 "access_log" :unique "status"
           [(Filter. "host" :str-equals false "shanghai.anjuke.com")]),
-   (Rule. 3 "accesslog" :count nil
+   (Rule. 3 "access_log" :count nil
           [(Filter. "status" :num-gt nil 200)])])
 
 (defn filter-log [datasource log]

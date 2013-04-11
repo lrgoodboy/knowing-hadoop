@@ -3,5 +3,6 @@
   :url "http://knowing.corp.anjuke.com"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.4.0"]]
+  :dependencies [[org.clojure/clojure "1.4.0"]
+                 [clj-yaml "0.4.0"]]
   :plugins [[lein2-eclipse "2.0.0"]])
