@@ -6,7 +6,7 @@
   (is (get-config :common)))
 
 (deftest zk-connect-test
-  (is (zk-connect)))
+  (is (.isStarted (zk-connect))))
 
 (def test-parent-node "/knowing-hadoop-test")
 (def test-node-name (str "node-" (System/currentTimeMillis)))

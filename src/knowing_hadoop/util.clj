@@ -1,5 +1,6 @@
 (ns knowing-hadoop.util
-  (:require [clj-yaml.core :as yaml])
+  (:require [clj-yaml.core :as yaml]
+            [clojure.data.json :as json])
   (:import [com.netflix.curator.framework CuratorFrameworkFactory]
            [com.netflix.curator.retry RetryUntilElapsed]))
 
@@ -22,6 +23,14 @@
 
   ([section item]
     (get (get-config section) item)))
+
+(defn json-decode [s]
+  (try
+    (json/read-str s)
+    (catch Exception e)))
+
+(defn in-array [value array]
+  ((complement nil?) (some (partial = value) array)))
 
 (def ^:private zk-client (ref nil))
 
