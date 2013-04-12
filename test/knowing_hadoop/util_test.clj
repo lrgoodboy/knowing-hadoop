@@ -12,8 +12,8 @@
 (def test-content (str "test-" (System/currentTimeMillis)))
 
 (deftest zk-get-set-test
-  (let [framework (zk-connect)
-        stat-set (zk-set! framework test-node test-content)
-        data (zk-get framework test-node)]
+  (let [client (zk-connect)
+        stat-set (zk-set! client test-node test-content)
+        data (zk-get client test-node)]
     (is (= test-content data))
-    (zk-delete! framework test-node)))
+    (zk-delete! client test-node)))
