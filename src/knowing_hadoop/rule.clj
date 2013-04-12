@@ -60,5 +60,6 @@
 
 (defn filter-log [datasource log]
   (binding [*datasource* datasource *log* log]
-    (doall (filter (complement nil?) (for [rule (get-rules)]
-                                       (rule-matches rule))))))
+    (doall ; When using binding, immediate evaluation is a must.
+      (filter (complement nil?) (for [rule (get-rules)]
+                                  (rule-matches rule))))))

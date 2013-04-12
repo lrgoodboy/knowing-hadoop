@@ -30,7 +30,7 @@
     (dosync
       (ref-set zk-client
                (CuratorFrameworkFactory/newClient
-                 (clojure.string/join \, (get-config :zookeeper :hosts))
+                 (clojure.string/join "," (get-config :zookeeper :hosts))
                  (RetryUntilElapsed. 3000 1000)))
       (.start @zk-client)))
   @zk-client)
@@ -45,7 +45,16 @@
   (.. client setData (forPath path (.getBytes data))))
 
 (defn zk-get [client path]
- (String. (.. client getData (forPath path))))
+  (String. (.. client getData (forPath path))))
 
 (defn zk-delete! [client path]
   (.. client delete (forPath path)))
+
+(defn join-path [path file]
+  (if (.endsWith path "/")
+    (str path file)
+    (str path "/" file)))
+
+(defn zk-get-children [client path]
+  (into {} (for [child (.. client getChildren (forPath path))]
+             [child (zk-get client (join-path path child))])))
