@@ -101,14 +101,17 @@
         filters (get rule-info "filters")]
     (Rule. rule-id
            datasource
-           (if (some #{rule-type} [:count :unique :average :ninety])
-             rule-type
-             (throw (Exception. (str "Unkown rule-type: " (name rule-type)))))
-           (case rule-type
-             :count nil
-             :unique field
-             :average field
-             :ninety field)
+           rule-type
+           (cond
+             (= :count rule-type) nil
+             (= :unique rule-type) field
+
+             (some #{rule-type} [:average :ninety])
+             (if (= :numeric (get (get datasources datasource) field))
+               field
+               (throw (Exception. (str "Invalid field '" field "' for rule-type '" rule-type "'."))))
+
+             :else (throw (Exception. (str "Unkown rule-type: " (name rule-type)))))
            (for [filter filters]
              (parse-filter datasource filter)))))
 
@@ -132,3 +135,19 @@
   (filter (complement nil?)
           (for [rule (get rules datasource)]
             (rule-matches rule log))))
+
+(defn collect-result-inner [rule values]
+  (let [rule-type (:rule-type rule)]
+    (cond
+      (= :count rule-type) (count values)
+      (= :unique rule-type) (count (set values))
+
+      (some #{rule-type} [:average :ninety])
+      (let [values-numeric (filter number? (map read-string values))]
+        (case rule-type
+          :average (double (/ (reduce + values-numeric) (count values-numeric)))
+          :ninety (let [values-sorted (sort values-numeric)]
+                    (nth values-sorted (dec (* (count values-sorted) 0.9)))))))))
+
+(defn collect-result [datasource rule-id values]
+  (collect-result-inner (get-in rules [datasource rule-id]) values))

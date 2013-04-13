@@ -21,7 +21,17 @@
       "field" "remote_addr"
       "filters" [["status" "nin" nil [301 302]]
                  ["remote_addr" "regex" nil "[0-9\\.]+"]]}
-   })
+
+  3 {"datasource" "access_log"
+     "rule_type" "average"
+     "field" "upstream_response_time"
+     "filters" []}
+
+  4 {"datasource" "access_log"
+     "rule_type" "ninety"
+     "field" "upstream_response_time"
+     "filters" []}
+  })
 
 (deftest parse-filter-test
   (let [rule-raw (get rules-test 1)
@@ -63,3 +73,12 @@
     (is (nil? (get-result 1 2)))
     (is (= [2 "1.2.3.4"] (get-result 2 1)))
     (is (nil? (get-result 2 2)))))
+
+(deftest collect-result-inner-test
+  (let [get-result (fn [rule-id values]
+                     (let [rule (parse-rule rule-id (get rules-test rule-id))]
+                       (collect-result-inner rule values)))]
+    (is (= 1 (get-result 1 [1])))
+    (is (= 2 (get-result 2 ["1.2.3.4" "1.2.3.4" "5.6.7.8"])))
+    (is (= 1.5 (get-result 3 ["1" "2"])))
+    (is (= 9 (get-result 4 (map str (range 1 11)))))))
