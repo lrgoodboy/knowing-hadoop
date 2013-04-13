@@ -55,11 +55,14 @@
       (if (:negative filter) (not result) result))))
 
 (defn rule-matches [rule]
-  (if (every? filter-matches (:filters rule))
-    [(:id rule)
-     (case (:rule-type rule)
-       :count nil
-       :unique (get *log* (:field rule)))]))
+  (when (every? filter-matches (:filters rule))
+    (let [rule-type (:rule-type rule)]
+      [(:id rule)
+       (cond
+         (= :count rule-type) nil
+
+         (some #{rule-type} [:unique :average :ninety])
+         (get *log* (:field rule)))])))
 
 (defn parse-filter [datasource filter]
   (let [field (nth filter 0)
@@ -73,9 +76,7 @@
                :numeric nil)
              (case (get-in datasources [datasource field])
                :string (cond
-                         (some
-                           (partial = operator)
-                           [:equals :contains :startswith :endswith])
+                         (some #{operator} [:equals :contains :startswith :endswith])
                          content
 
                          (= :regex operator) (re-pattern content)
@@ -84,14 +85,10 @@
                          :else (throw (Exception. (str "Unkown operator: " (name operator)))))
 
                :numeric (cond
-                          (some
-                            (partial = operator)
-                            [:eq :neq :gt :gte :lt :lte])
+                          (some #{operator} [:eq :neq :gt :gte :lt :lte])
                           content
 
-                          (some
-                            (partial = operator)
-                            [:in :nin])
+                          (some #{operator} [:in :nin])
                           (seq content)
 
                           :else (throw (Exception. (str "Unkown operator: " (name operator)))))))))
@@ -103,7 +100,9 @@
         filters (get rule-info "filters")]
     (Rule. rule-id
            datasource
-           rule-type
+           (if (some #{rule-type} [:count :unique :average :ninety])
+             rule-type
+             (throw (Exception. (str "Unkown rule-type: " (name rule-type)))))
            (case rule-type
              :count nil
              :unique field
@@ -112,21 +111,24 @@
            (for [filter filters]
              (parse-filter datasource filter)))))
 
+(defn parse-rules [rule-map]
+  (group-by #(:datasource %)
+            (filter (complement nil?)
+                    (for [[rule-id rule-info-json] rule-map
+                          :let [rule-info (util/json-decode rule-info-json)]
+                          :when (not (nil? rule-info))]
+                      (parse-rule rule-id rule-info)))))
+
 (defn get-rules []
   (let [client (util/zk-connect)
         rule-path (util/get-config :zookeeper :rule-path)
         children (util/zk-get-children client rule-path)]
-    (group-by #(:datasource %)
-              (filter (complement nil?)
-                      (for [[rule-id rule-info-json] children
-                            :let [rule-info (util/json-decode rule-info-json)]
-                            :when (not (nil? rule-info))]
-                        (parse-rule rule-id rule-info))))))
+    (parse-rules children)))
 
 (def rules (get-rules))
 
 (defn filter-log [datasource log]
   (binding [*datasource* datasource *log* log]
-    (doall ; When using binding, immediate evaluation is a must.
+    (doall ; When binding is used, immediate evaluation is a must.
       (filter (complement nil?) (for [rule (get rules datasource)]
                                   (rule-matches rule))))))

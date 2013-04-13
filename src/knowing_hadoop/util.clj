@@ -29,6 +29,9 @@
     (json/read-str s)
     (catch Exception e)))
 
+(defn json-encode [o]
+  (json/write-str o))
+
 (defn in-array [value array]
   ((complement nil?) (some (partial = value) array)))
 
