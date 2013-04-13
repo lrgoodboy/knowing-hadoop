@@ -42,7 +42,7 @@
     (dosync
       (ref-set zk-client
                (CuratorFrameworkFactory/newClient
-                 (clojure.string/join "," (get-config :zookeeper :hosts))
+                 (clojure.string/join "," (get-config :override :hosts))
                  (RetryUntilElapsed. 3000 1000)))
       (.start @zk-client)))
   @zk-client)

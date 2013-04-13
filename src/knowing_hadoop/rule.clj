@@ -125,11 +125,18 @@
 
 (defn get-rules []
   (let [client (util/zk-connect)
-        rule-path (util/get-config :zookeeper :rule-path)
+        rule-path (util/get-config :override :rule-path)
         children (util/zk-get-children client rule-path)]
     (parse-rules children)))
 
 (def rules (get-rules))
+(if (seq rules)
+  (do
+    (print "Rules loaded - ")
+    (doseq [[k v] rules]
+      (print (str k ":" (count v))))
+    (newline))
+  (println "No rules."))
 
 (defn filter-log [datasource log]
   (filter (complement nil?)
