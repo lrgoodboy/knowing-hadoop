@@ -37,7 +37,7 @@
     :lt (< a b)
     :lte (<= a b)
     :in (util/in-array a b)
-    :nin (not (util/in-array))))
+    :nin (not (util/in-array a b))))
 
 (defn filter-matches-inner [filter log-content]
   (let [field (:field filter)
@@ -54,15 +54,16 @@
     (let [result (filter-matches-inner filter content)]
       (if (:negative filter) (not result) result))))
 
-(defn rule-matches [rule]
-  (when (every? filter-matches (:filters rule))
-    (let [rule-type (:rule-type rule)]
-      [(:id rule)
-       (cond
-         (= :count rule-type) nil
+(defn rule-matches [rule log]
+  (binding [*datasource* (:datasource rule) *log* log]
+    (when (every? filter-matches (:filters rule))
+      (let [rule-type (:rule-type rule)]
+        [(:id rule)
+         (cond
+           (= :count rule-type) nil
 
-         (some #{rule-type} [:unique :average :ninety])
-         (get *log* (:field rule)))])))
+           (some #{rule-type} [:unique :average :ninety])
+           (get log (:field rule)))]))))
 
 (defn parse-filter [datasource filter]
   (let [field (nth filter 0)
@@ -128,7 +129,6 @@
 (def rules (get-rules))
 
 (defn filter-log [datasource log]
-  (binding [*datasource* datasource *log* log]
-    (doall ; When binding is used, immediate evaluation is a must.
-      (filter (complement nil?) (for [rule (get rules datasource)]
-                                  (rule-matches rule))))))
+  (filter (complement nil?)
+          (for [rule (get rules datasource)]
+            (rule-matches rule log))))

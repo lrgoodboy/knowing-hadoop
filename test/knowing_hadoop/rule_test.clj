@@ -19,7 +19,8 @@
    2 {"datasource" "access_log"
       "rule_type" "unique"
       "field" "remote_addr"
-      "filters" [["status" "nin" nil [301 302]]]}
+      "filters" [["status" "nin" nil [301 302]]
+                 ["remote_addr" "regex" nil "[0-9\\.]+"]]}
    })
 
 (deftest parse-filter-test
@@ -30,14 +31,16 @@
     (is (true? (:negative filter))))
   (let [rule-raw (get rules-test 2)
         datasource (get rule-raw "datasource")
-        filter (parse-filter datasource (first (get rule-raw "filters")))]
-    (is (= 302 (second (:content filter))))))
+        filter-1 (parse-filter datasource (first (get rule-raw "filters")))
+        filter-2 (parse-filter datasource (second (get rule-raw "filters")))]
+    (is (= 302 (second (:content filter-1))))
+    (is (instance? java.util.regex.Pattern (:content filter-2)))))
 
 (deftest parse-rule-test
   (let [rule (parse-rule 2 (get rules-test 2))]
     (is (= :unique (:rule-type rule)))
     (is (= "remote_addr" (:field rule)))
-    (is (seq (:filters rule)))))
+    (is (= 2 (count (:filters rule))))))
 
 (deftest parse-rules-test
   (let [children (into {} (for [[k v] rules-test]
@@ -45,12 +48,18 @@
         rules (parse-rules children)]
     (is (seq (get rules "access_log")))))
 
-(def demo-map {"host" "shanghai.anjuke.com"
-               "status" "200"})
+(def logs-test
+  {1 {"host" "shanghai.anjuke.com"
+      "status" "200"
+      "remote_addr" "1.2.3.4"}
+   2 {"host" "www.anjuke.com"
+      "status" "301"}})
 
 (deftest rule-matches-test
-  (let [rule (parse-rule 1 (get rules-test 1))]
-    (binding [*datasource* (:datasource rule)
-              *log* demo-map]
-      (let [result (rule-matches rule)]
-        (is (= [1 nil] result))))))
+  (let [get-result (fn [rule-id log-id]
+                     (let [rule (parse-rule rule-id (get rules-test rule-id))]
+                       (rule-matches rule (get logs-test log-id))))]
+    (is (= [1 nil] (get-result 1 1)))
+    (is (nil? (get-result 1 2)))
+    (is (= [2 "1.2.3.4"] (get-result 2 1)))
+    (is (nil? (get-result 2 2)))))
