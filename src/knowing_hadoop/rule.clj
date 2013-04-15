@@ -124,9 +124,8 @@
                       (parse-rule rule-id rule-info)))))
 
 (defn get-rules []
-  (let [client (util/zk-connect)
-        rule-path (util/get-config :override :rule-path)
-        children (util/zk-get-children client rule-path)
+  (let [rule-path (util/get-config :override :rule-path)
+        children (util/zk-get-children rule-path)
         rules (parse-rules children)]
     (if (seq rules)
       (do

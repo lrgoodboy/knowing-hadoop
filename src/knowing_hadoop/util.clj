@@ -4,7 +4,7 @@
   (:import [com.netflix.curator.framework CuratorFrameworkFactory]
            [com.netflix.curator.retry RetryUntilElapsed]))
 
-(def ^:private config (ref {}))
+(def ^:private config (atom {}))
 
 (defn- read-config [section]
   {:post [(map? %)]}
@@ -17,9 +17,9 @@
   ([section]
     (if-let [config-section (get @config section)]
       config-section
-      (get (dosync
-             (alter config assoc section (read-config section)))
-           section)))
+      (let [config-section (read-config section)]
+        (swap! config assoc section config-section)
+        config-section)))
 
   ([section item]
     (get (get-config section) item)))
@@ -35,38 +35,35 @@
 (defn in-array [value array]
   ((complement nil?) (some (partial = value) array)))
 
-(def ^:private zk-client (ref nil))
-
 (defn zk-connect []
-  (if-not @zk-client
-    (dosync
-      (ref-set zk-client
-               (CuratorFrameworkFactory/newClient
+  (let [client (CuratorFrameworkFactory/newClient
                  (clojure.string/join "," (get-config :override :hosts))
-                 (RetryUntilElapsed. 3000 1000)))
-      (.start @zk-client)))
-  @zk-client)
+                 (RetryUntilElapsed. 3000 1000))]
+    (.start client)
+    client))
 
-(defn zk-ensure! [client path]
-  (let [client-inner (.getZookeeperClient client)
-        ensurePath (.newNamespaceAwareEnsurePath client path)]
+(def zk-client (delay (zk-connect)))
+
+(defn zk-ensure! [path]
+  (let [client-inner (.getZookeeperClient @zk-client)
+        ensurePath (.newNamespaceAwareEnsurePath @zk-client path)]
     (.ensure ensurePath client-inner)))
 
-(defn zk-set! [client path data]
-  (zk-ensure! client path)
-  (.. client setData (forPath path (.getBytes data))))
+(defn zk-set! [path data]
+  (zk-ensure! path)
+  (.. @zk-client setData (forPath path (.getBytes data))))
 
-(defn zk-get [client path]
-  (String. (.. client getData (forPath path))))
+(defn zk-get [path]
+  (String. (.. @zk-client getData (forPath path))))
 
-(defn zk-delete! [client path]
-  (.. client delete (forPath path)))
+(defn zk-delete! [path]
+  (.. @zk-client delete (forPath path)))
 
 (defn join-path [path file]
   (if (.endsWith path "/")
     (str path file)
     (str path "/" file)))
 
-(defn zk-get-children [client path]
-  (into {} (for [child (.. client getChildren (forPath path))]
-             [child (zk-get client (join-path path child))])))
+(defn zk-get-children [path]
+  (into {} (for [child (.. @zk-client getChildren (forPath path))]
+             [child (zk-get (join-path path child))])))
