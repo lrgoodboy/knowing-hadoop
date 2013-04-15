@@ -7,4 +7,5 @@
                  [clj-yaml "0.4.0"]
                  [com.netflix.curator/curator-framework "1.3.3"]
                  [org.clojure/data.json "0.2.2"]]
-  :plugins [[lein2-eclipse "2.0.0"]])
+  :plugins [[lein2-eclipse "2.0.0"]]
+  :main knowing-hadoop.core)

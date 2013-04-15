@@ -8,7 +8,7 @@
                 (into {} (for [[field type] fields]
                            [(name field) (keyword type)]))]))))
 
-(def datasources (get-datasources))
+(def datasources (delay (get-datasources)))
 
 (declare ^:dynamic *datasource*)
 (declare ^:dynamic *log*)
@@ -43,7 +43,7 @@
   (let [field (:field filter)
         operator (:operator filter)
         filter-content (:content filter)]
-    (case (get-in datasources [*datasource* field])
+    (case (get-in @datasources [*datasource* field])
       :string (filter-str log-content operator filter-content)
       :numeric (let [log-content-numeric (read-string log-content)]
                  (when (number? log-content-numeric)
@@ -72,10 +72,10 @@
         content (nth filter 3)]
     (Filter. field
              operator
-             (case (get-in datasources [datasource field])
+             (case (get-in @datasources [datasource field])
                :string (true? negative)
                :numeric nil)
-             (case (get-in datasources [datasource field])
+             (case (get-in @datasources [datasource field])
                :string (cond
                          (some #{operator} [:equals :contains :startswith :endswith])
                          content
@@ -107,7 +107,7 @@
              (= :unique rule-type) field
 
              (some #{rule-type} [:average :ninety])
-             (if (= :numeric (get (get datasources datasource) field))
+             (if (= :numeric (get-in @datasources [datasource field]))
                field
                (throw (Exception. (str "Invalid field '" field "' for rule-type '" rule-type "'."))))
 
@@ -126,21 +126,22 @@
 (defn get-rules []
   (let [client (util/zk-connect)
         rule-path (util/get-config :override :rule-path)
-        children (util/zk-get-children client rule-path)]
-    (parse-rules children)))
+        children (util/zk-get-children client rule-path)
+        rules (parse-rules children)]
+    (if (seq rules)
+      (do
+        (print "Rules loaded - ")
+        (doseq [[k v] rules]
+          (print (str k ":" (count v))))
+        (newline))
+      (println "No rules."))
+    rules))
 
-(def rules (get-rules))
-(if (seq rules)
-  (do
-    (print "Rules loaded - ")
-    (doseq [[k v] rules]
-      (print (str k ":" (count v))))
-    (newline))
-  (println "No rules."))
+(def rules (delay (get-rules)))
 
 (defn filter-log [datasource log]
   (filter (complement nil?)
-          (for [rule (get rules datasource)]
+          (for [rule (get @rules datasource)]
             (rule-matches rule log))))
 
 (defn collect-result-inner [rule values]
@@ -157,4 +158,4 @@
                     (nth values-sorted (dec (* (count values-sorted) 0.9)))))))))
 
 (defn collect-result [datasource rule-id values]
-  (collect-result-inner (get-in rules [datasource rule-id]) values))
+  (collect-result-inner (get-in @rules [datasource rule-id]) values))

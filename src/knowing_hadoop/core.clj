@@ -1,6 +1,6 @@
-(ns knowing-hadoop.core)
+(ns knowing-hadoop.core
+  (:require [knowing-hadoop.rule :as rule])
+  (:gen-class))
 
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
+(defn -main [& args]
+  (println @rule/rules))
