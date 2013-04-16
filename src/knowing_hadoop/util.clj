@@ -1,6 +1,7 @@
 (ns knowing-hadoop.util
   (:require [clj-yaml.core :as yaml]
-            [clojure.data.json :as json])
+            [clojure.data.json :as json]
+            [clj-time.core])
   (:import [com.netflix.curator.framework CuratorFrameworkFactory]
            [com.netflix.curator.retry RetryUntilElapsed]))
 
@@ -34,6 +35,29 @@
 
 (defn in-array [value array]
   ((complement nil?) (some (partial = value) array)))
+
+(defn parse-line
+
+  ([line]
+    (parse-line line " "))
+
+  ([line delim]
+    (parse-line line delim 0))
+
+  ([line delim from-index]
+    (let [index (.indexOf line delim from-index)]
+      (when (not= -1 index)
+        (cons (subs line from-index index)
+              (lazy-seq (parse-line line delim (inc index))))))))
+
+(defn current-minute []
+  (let [now (clj-time.core/now)
+        year (clj-time.core/year now)
+        month (clj-time.core/month now)
+        day (clj-time.core/day now)
+        hour (clj-time.core/hour now)
+        minute (clj-time.core/minute now)]
+    (clj-time.core/local-date-time year month day hour minute)))
 
 (defn zk-connect []
   (let [client (CuratorFrameworkFactory/newClient

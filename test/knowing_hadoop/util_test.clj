@@ -1,9 +1,18 @@
 (ns knowing-hadoop.util-test
+  (:require [clj-time.core])
   (:use clojure.test
         knowing-hadoop.util))
 
 (deftest get-config-test
   (is (get-config :common)))
+
+(deftest parse-line-test
+  (is (= "b" (second (parse-line "a b c"))))
+  (let [delim (str (char 1))]
+    (is (= "" (second (parse-line (str "a" delim delim "b") delim))))))
+
+(deftest current-minute-test
+  (is (= 0 (clj-time.core/sec (current-minute)))))
 
 (deftest zk-connect-test
   (is (.isStarted @zk-client)))
