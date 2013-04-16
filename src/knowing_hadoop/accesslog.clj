@@ -1,33 +1,62 @@
 (ns knowing-hadoop.accesslog
+  (:require [knowing-hadoop.util :as util])
   (:use knowing-hadoop.rule))
 
-; '$request_time $upstream_response_time $remote_addr $request_length $upstream_addr  [$time_local] '
-; '$host "$request_method $request_url $request_protocol" $status $bytes_send '
-; '"$http_referer" "$http_user_agent" "$gzip_ratio" "$http_x_forwarded_for" - "$server_addr $cookie_aQQ_ajkguid"'
-(def ptrn (re-pattern (str "(.*?) (.*?) (.*?) (.*?) (.*?)  \\[(.*?)\\] "
-                           "(.*?) \"(.*?) (.*?) (.*?)\" (.*?) (.*?) "
-                           "\"(.*?)\" \"(.*?)\" \"(.*?)\" \"(.*?)\" - \"(.*?) (.*?)\"")))
+;; '$request_time $upstream_response_time $remote_addr $request_length $upstream_addr  [$time_local] '
+;; '$host "$request_method $request_url $request_protocol" $status $bytes_send '
+;; '"$http_referer" "$http_user_agent" "$gzip_ratio" "$http_x_forwarded_for" - "$server_addr $cookie_aQQ_ajkguid"'
+;(def ptrn (re-pattern (str "(.*?) (.*?) (.*?) (.*?) (.*?)  \\[(.*?)\\] "
+;                           "(.*?) \"(.*?) (.*?) (.*?)\" (.*?) (.*?) "
+;                           "\"(.*?)\" \"(.*?)\" \"(.*?)\" \"(.*?)\" - \"(.*?) (.*?)\"")))
+
+(defn get-month-name [month]
+  (case month
+    "01" "Jan"
+    "02" "Feb"
+    "03" "Mar"
+    "04" "Apr"
+    "05" "May"
+    "06" "Jun"
+    "07" "Jul"
+    "08" "Aug"
+    "09" "Sep"
+    "10" "Oct"
+    "11" "Nov"
+    "12" "Dec"
+    month))
+
+(defn divide-1k [s]
+  (let [n (read-string s)]
+    (if (number? n)
+      (format "%.3f" (/ n 1000.0))
+      s)))
 
 (defn parse-log [log]
-  (when-let [matches (re-matches ptrn log)]
-    {"request_time" (nth matches 1)
-     "upstream_response_time" (nth matches 2)
-     "remote_addr" (nth matches 3)
-     "request_length" (nth matches 4)
-     "upstream_addr" (nth matches 5)
-     "time_local" (nth matches 6)
-     "host" (nth matches 7)
-     "request_method" (nth matches 8)
-     "request_url" (nth matches 9)
-     "request_protocol" (nth matches 10)
-     "status" (nth matches 11)
-     "bytes_send" (nth matches 12)
-     "http_referer" (nth matches 13)
-     "http_user_agent" (nth matches 14)
-     "gzip_ratio" (nth matches 15)
-     "http_x_forwarded_for" (nth matches 16)
-     "server_addr" (nth matches 17)
-     "cookie_aQQ_ajkguid" (nth matches 18)}))
+  (let [arr (util/split-line log)]
+    {"request_time" (divide-1k (nth arr 4))
+     "upstream_response_time" (divide-1k (nth arr 5))
+     "remote_addr" (nth arr 6)
+     "request_length" nil
+     "upstream_addr" (nth arr 7)
+     "time_local" (str (nth arr 2) "/"
+                       (get-month-name (nth arr 20)) "/"
+                       (nth arr 1) ":"
+                       (nth arr 0) ":"
+                       (nth arr 3) ":"
+                       (nth arr 19) " "
+                       "+0800")
+     "host" (nth arr 8)
+     "request_method" (nth arr 9)
+     "request_url" (nth arr 10)
+     "request_protocol" nil
+     "status" (nth arr 11)
+     "bytes_send" (nth arr 12)
+     "http_referer" (nth arr 13)
+     "http_user_agent" (nth arr 14)
+     "gzip_ratio" (nth arr 15)
+     "http_x_forwarded_for" (nth arr 16)
+     "server_addr" (nth arr 17)
+     "cookie_aQQ_ajkguid" (nth arr 18)}))
 
 (defn mapper [key value]
   (when-let [log (parse-log value)]

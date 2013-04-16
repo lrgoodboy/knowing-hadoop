@@ -6,10 +6,10 @@
 (deftest get-config-test
   (is (get-config :common)))
 
-(deftest parse-line-test
-  (is (= "b" (second (parse-line "a b c"))))
+(deftest split-line-test
+  (is (= "bb" (second (split-line "aa\tbb"))))
   (let [delim (str (char 1))]
-    (is (= "" (second (parse-line (str "a" delim delim "b") delim))))))
+    (is (= "" (second (split-line (str "aa" delim delim "bb") delim))))))
 
 (deftest current-minute-test
   (is (= 0 (clj-time.core/sec (current-minute)))))

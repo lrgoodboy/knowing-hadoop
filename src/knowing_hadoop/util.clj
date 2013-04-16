@@ -36,19 +36,20 @@
 (defn in-array [value array]
   ((complement nil?) (some (partial = value) array)))
 
-(defn parse-line
+(defn split-line
 
   ([line]
-    (parse-line line " "))
+    (split-line line "\t"))
 
   ([line delim]
-    (parse-line line delim 0))
+    (split-line line delim 0))
 
   ([line delim from-index]
     (let [index (.indexOf line delim from-index)]
-      (when (not= -1 index)
+      (if (not= -1 index)
         (cons (subs line from-index index)
-              (lazy-seq (parse-line line delim (inc index))))))))
+              (lazy-seq (split-line line delim (inc index))))
+        (list (subs line from-index))))))
 
 (defn current-minute []
   (let [now (clj-time.core/now)

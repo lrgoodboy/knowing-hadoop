@@ -9,7 +9,7 @@
                              (day dt)
                              (minute dt)
                              "-"
-                             180.0
+                             "180.0"
                              "-"
                              "-"
                              "www.anjuke.com"
