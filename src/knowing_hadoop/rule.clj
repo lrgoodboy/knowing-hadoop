@@ -116,12 +116,16 @@
              (parse-filter datasource filter)))))
 
 (defn parse-rules [rule-map]
-  (group-by #(:datasource %)
-            (filter (complement nil?)
-                    (for [[rule-id rule-info-json] rule-map
-                          :let [rule-info (util/json-decode rule-info-json)]
-                          :when (not (nil? rule-info))]
-                      (parse-rule rule-id rule-info)))))
+  (let [rules (for [[rule-id rule-info-json] rule-map
+                    :let [rule-info (util/json-decode rule-info-json)]
+                    :when (not (nil? rule-info))]
+                (parse-rule rule-id rule-info))
+        rules (filter (complement nil?) rules)
+        rules (group-by #(:datasource %) rules)]
+    (into {} (for [[datasource rules] rules]
+               [datasource
+                (into {} (for [rule rules]
+                           [(:id rule) rule]))]))))
 
 (defn get-rules []
   (let [rule-path (util/get-config :override :rule-path)
@@ -140,7 +144,7 @@
 
 (defn filter-log [datasource log]
   (filter (complement nil?)
-          (for [rule (get @rules datasource)]
+          (for [[rule-id rule] (get @rules datasource)]
             (rule-matches rule log))))
 
 (defn collect-result-inner [rule values]

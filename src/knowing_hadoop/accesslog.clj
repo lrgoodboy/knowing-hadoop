@@ -1,6 +1,9 @@
 (ns knowing-hadoop.accesslog
-  (:require [knowing-hadoop.util :as util])
-  (:use knowing-hadoop.rule))
+  (:require [clojure-hadoop.wrap :as wrap]
+            [clojure-hadoop.defjob :as defjob]
+            [knowing-hadoop.util :as util]
+            [knowing-hadoop.rule :as rule])
+  (:use [clojure-hadoop.job :only [run]]))
 
 ;; '$request_time $upstream_response_time $remote_addr $request_length $upstream_addr  [$time_local] '
 ;; '$host "$request_method $request_url $request_protocol" $status $bytes_send '
@@ -60,4 +63,18 @@
 
 (defn mapper [key value]
   (when-let [log (parse-log value)]
-    (filter-log "access_log" log)))
+    (rule/filter-log "access_log" log)))
+
+(defn reducer [key values-fn]
+  [[key (rule/collect-result "access_log" key (values-fn))]])
+
+(defjob/defjob job
+  :map mapper
+  :map-reader wrap/int-string-map-reader
+  :reduce reducer
+  :input-format :text
+  :output-format :text
+  :compress-output false
+  :replace true
+  :input "test_logs"
+  :output "test_result")

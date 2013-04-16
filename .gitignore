@@ -17,4 +17,4 @@ pom.xml.asc
 /.settings
 
 /test_logs
-
+/test_result

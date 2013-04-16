@@ -30,7 +30,7 @@
   (let [now (util/current-minute)
         filename (str "test_logs/access_log_"
                       (unparse-local (formatter "yyyyMMddhhmm") now)
-                      ".log")]
+                      "_log")]
     (with-open [wtr (clojure.java.io/writer filename)]
       (doseq [i (range 0 60)]
         (let [dt (plus now (secs i))]
