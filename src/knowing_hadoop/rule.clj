@@ -116,13 +116,14 @@
              (parse-filter datasource filter)))))
 
 (defn parse-rules [rule-map]
-  (let [rules (for [[rule-id rule-info-json] rule-map
-                    :let [rule-info (util/json-decode rule-info-json)]
-                    :when (not (nil? rule-info))]
+  (let [rules (for [[rule-id-str rule-info-json] rule-map
+                    :let [rule-id (read-string rule-id-str)
+                          rule-info (util/json-decode rule-info-json)]
+                    :when (and (number? rule-id) (not (nil? rule-info)))]
                 (parse-rule rule-id rule-info))
-        rules (filter (complement nil?) rules)
-        rules (group-by #(:datasource %) rules)]
-    (into {} (for [[datasource rules] rules]
+        rules-filtered (filter (complement nil?) rules)
+        rules-grouped (group-by #(:datasource %) rules-filtered)]
+    (into {} (for [[datasource rules] rules-grouped]
                [datasource
                 (into {} (for [rule rules]
                            [(:id rule) rule]))]))))
@@ -135,7 +136,7 @@
       (do
         (print "Rules loaded - ")
         (doseq [[k v] rules]
-          (print (str k ":" (count v))))
+          (print (str k ":" (count v) " ")))
         (newline))
       (println "No rules."))
     rules))
@@ -147,18 +148,23 @@
           (for [[rule-id rule] (get @rules datasource)]
             (rule-matches rule log))))
 
+(defn filter-number [values]
+  (filter number? (map read-string values)))
+
+(defn calc-average [values]
+  (/ (reduce + values) (count values)))
+
+(defn calc-ninety [values]
+  (let [values-sorted (sort values)]
+    (nth values-sorted (-> values-sorted count (* 0.9) dec))))
+
 (defn collect-result-inner [rule values]
   (let [rule-type (:rule-type rule)]
-    (cond
-      (= :count rule-type) (count values)
-      (= :unique rule-type) (count (set values))
-
-      (some #{rule-type} [:average :ninety])
-      (let [values-numeric (filter number? (map read-string values))]
-        (case rule-type
-          :average (double (/ (reduce + values-numeric) (count values-numeric)))
-          :ninety (let [values-sorted (sort values-numeric)]
-                    (nth values-sorted (dec (* (count values-sorted) 0.9)))))))))
+    (case rule-type
+      :count (-> values count long)
+      :unique (-> values set count long)
+      :average (-> values filter-number calc-average (* 1e3) long)
+      :ninety (-> values filter-number calc-ninety (* 1e3) long))))
 
 (defn collect-result [datasource rule-id values]
   (collect-result-inner (get-in @rules [datasource rule-id]) values))

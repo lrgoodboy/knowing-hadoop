@@ -47,14 +47,14 @@
     (is (instance? java.util.regex.Pattern (:content filter-2)))))
 
 (deftest parse-rule-test
-  (let [rule (parse-rule 2 (get rules-test 2))]
+  (let [rule (parse-rule (str 2) (get rules-test 2))]
     (is (= :unique (:rule-type rule)))
     (is (= "remote_addr" (:field rule)))
     (is (= 2 (count (:filters rule))))))
 
 (deftest parse-rules-test
   (let [children (into {} (for [[k v] rules-test]
-                            [k (util/json-encode v)]))
+                            [(str k) (util/json-encode v)]))
         rules (parse-rules children)]
     (is (seq (get rules "access_log")))))
 
@@ -80,5 +80,5 @@
                        (collect-result-inner rule values)))]
     (is (= 1 (get-result 1 [1])))
     (is (= 2 (get-result 2 ["1.2.3.4" "1.2.3.4" "5.6.7.8"])))
-    (is (= 1.5 (get-result 3 ["1" "2"])))
-    (is (= 9 (get-result 4 (map str (range 1 11)))))))
+    (is (= 1500 (get-result 3 ["1" "2"])))
+    (is (= 9000 (get-result 4 (map str (range 1 11)))))))
