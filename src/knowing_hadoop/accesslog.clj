@@ -67,14 +67,3 @@
 
 (defn reducer [key values-fn]
   [[key (rule/collect-result "access_log" key (values-fn))]])
-
-(defjob/defjob job
-  :map mapper
-  :map-reader wrap/int-string-map-reader
-  :reduce reducer
-  :input-format :text
-  :output-format :text
-  :compress-output false
-  :replace true
-  :input "test_logs"
-  :output "test_result")
