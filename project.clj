@@ -8,6 +8,8 @@
                  [com.netflix.curator/curator-framework "1.3.3"]
                  [org.clojure/data.json "0.2.2"]
                  [clj-time "0.5.0"]
-                 [clojure-hadoop "1.4.2"]]
+                 [clojure-hadoop "1.4.2"]
+                 [org.clojure/java.jdbc "0.2.3"]
+                 [mysql/mysql-connector-java "5.1.24"]]
   :plugins [[lein2-eclipse "2.0.0"]]
   :main knowing-hadoop.core)
