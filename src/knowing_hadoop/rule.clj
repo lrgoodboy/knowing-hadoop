@@ -129,7 +129,7 @@
                            [(:id rule) rule]))]))))
 
 (defn get-rules []
-  (let [rule-path (util/get-config :override :rule-path)
+  (let [rule-path (util/get-config :common :rule-path)
         children (util/zk-get-children rule-path)
         rules (parse-rules children)]
     (if (seq rules)

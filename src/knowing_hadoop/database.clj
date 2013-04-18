@@ -3,7 +3,7 @@
             [clojure.java.jdbc :as sql]))
 
 (defn get-db-spec []
-  (let [db (util/get-config :database :knowing)]
+  (let [db (util/get-config :override :knowing-db)]
     {:classname "com.mysql.jdbc.Driver"
      :subprotocol "mysql"
      :subname (format "//%s:%d/%s?useUnicode=true&characterEncoding=UTF-8"
