@@ -16,6 +16,15 @@
     (apply concat (for [filename filenames]
                     (process-file filename)))))
 
+(defn get-filenames-single [directory]
+  (for [file (file-seq (clojure.java.io/file directory))
+        :when (.. file getName (startsWith "part"))]
+    (.getPath file)))
+
+(defn get-filenames [directories]
+  (apply concat (for [directory directories]
+                  (get-filenames-single directory))))
+
 (defn -main [& args]
 
   (run {:map "knowing-hadoop.accesslog/mapper"
@@ -38,6 +47,7 @@
         :input "test_logs/soj"
         :output "test_result/soj"})
 
-  (let [result (process-files ["test_result/access_log/part-r-00000"
-                               "test_result/soj/part-r-00000"])]
+  (let [filenames (get-filenames ["test_result/access_log"
+                                  "test_result/soj"])
+        result (process-files filenames)]
     (println (count result) "rows inserted.")))
