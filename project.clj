@@ -10,6 +10,7 @@
                  [clj-time "0.5.0"]
                  [clojure-hadoop "1.4.2"]
                  [org.clojure/java.jdbc "0.2.3"]
-                 [mysql/mysql-connector-java "5.1.24"]]
+                 [mysql/mysql-connector-java "5.1.24"]
+                 [com.hadoop.gplcompression/hadoop-lzo "0.4.16"]]
   :plugins [[lein2-eclipse "2.0.0"]]
   :main knowing-hadoop.core)

@@ -1,9 +1,6 @@
 (ns knowing-hadoop.accesslog
-  (:require [clojure-hadoop.wrap :as wrap]
-            [clojure-hadoop.defjob :as defjob]
-            [knowing-hadoop.util :as util]
-            [knowing-hadoop.rule :as rule])
-  (:use [clojure-hadoop.job :only [run]]))
+  (:require [knowing-hadoop.util :as util]
+            [knowing-hadoop.rule :as rule]))
 
 ;; '$request_time $upstream_response_time $remote_addr $request_length $upstream_addr  [$time_local] '
 ;; '$host "$request_method $request_url $request_protocol" $status $bytes_send '

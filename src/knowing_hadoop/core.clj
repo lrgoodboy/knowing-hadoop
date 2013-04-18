@@ -7,8 +7,8 @@
     (doall (for [line (line-seq rdr)
                  :let [matches (re-matches #"^([0-9]+)\t([0-9]+)$" line)]
                  :when matches]
-             {"f_ds_id" (read-string (first matches))
-              "f_data" (read-string (second matches))
+             {"f_ds_id" (read-string (nth matches 1))
+              "f_data" (read-string (nth matches 2))
               "f_time" "2013-04-16"}))))
 
 (defn process-files [filenames]
@@ -25,8 +25,19 @@
         :output-format "text"
         :compress-output "false"
         :replace "true"
-        :input "test_logs"
-        :output "test_result"})
+        :input "test_logs/access_log"
+        :output "test_result/access_log"})
 
-  (let [result (process-files ["test_result/part-r-00000"])]
+  (run {:map "knowing-hadoop.soj/mapper"
+        :map-reader "clojure-hadoop.wrap/int-string-map-reader"
+        :reduce "knowing-hadoop.soj/reducer"
+        :input-format "text"
+        :output-format "text"
+        :compress-output "false"
+        :replace "true"
+        :input "test_logs/soj"
+        :output "test_result/soj"})
+
+  (let [result (process-files ["test_result/access_log/part-r-00000"
+                               "test_result/soj/part-r-00000"])]
     (println (count result) "rows inserted.")))
