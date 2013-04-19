@@ -1,5 +1,6 @@
 (ns knowing-hadoop.rule
-  (:require [knowing-hadoop.util :as util]))
+  (:require [knowing-hadoop.util :as util]
+            [clojure.tools.logging :as logging]))
 
 (defn get-datasources []
   (let [datasources (util/get-config :datasources)]
@@ -133,12 +134,11 @@
         children (util/zk-get-children rule-path)
         rules (parse-rules children)]
     (if (seq rules)
-      (do
-        (print "Rules loaded - ")
-        (doseq [[k v] rules]
-          (print (str k ":" (count v) " ")))
-        (newline))
-      (println "No rules."))
+      (let [output (apply str "Rules loaded - "
+                          (for [[k v] rules]
+                            (str k ":" (count v) " ")))]
+        (logging/info output))
+      (logging/info "No rules."))
     rules))
 
 (def rules (delay (get-rules)))

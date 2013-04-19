@@ -10,6 +10,9 @@
     (is (= :string (get-in datasources
                            ["soj" "guid"])))))
 
+(deftest get-rules-test
+  (is (get-rules)))
+
 (def rules-test
   {1 {"datasource" "access_log"
       "rule_type" "count"
