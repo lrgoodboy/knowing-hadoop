@@ -68,32 +68,39 @@
 
 (defn parse-filter [datasource filter]
   (let [field (nth filter 0)
+        field-type (get-in @datasources [datasource field])
         operator (keyword (nth filter 1))
         negative (nth filter 2)
         content (nth filter 3)]
     (Filter. field
-             operator
-             (case (get-in @datasources [datasource field])
+             (case field-type
+               :string (if (#{:equals :contains :startswith :endswith :regex :in} operator)
+                         operator
+                         (throw (Exception. (str "Invalid operator: " operator))))
+               :numeric (if (#{:eq :neq :gt :gte :lt :lte :in :nin} operator)
+                          operator
+                          (throw (Exception. (str "invalid operator: " operator)))))
+             (case field-type
                :string (true? negative)
                :numeric nil)
-             (case (get-in @datasources [datasource field])
+             (case field-type
                :string (cond
-                         (some #{operator} [:equals :contains :startswith :endswith])
+                         (#{:equals :contains :startswith :endswith} operator)
                          content
 
                          (= :regex operator) (re-pattern content)
                          (= :in operator) (seq content)
 
-                         :else (throw (Exception. (str "Unkown operator: " (name operator)))))
+                         :else (throw (Exception. (str "Unkown operator: " operator))))
 
                :numeric (cond
-                          (some #{operator} [:eq :neq :gt :gte :lt :lte])
+                          (#{:eq :neq :gt :gte :lt :lte} operator)
                           content
 
-                          (some #{operator} [:in :nin])
+                          (#{:in :nin} operator)
                           (seq content)
 
-                          :else (throw (Exception. (str "Unkown operator: " (name operator)))))))))
+                          :else (throw (Exception. (str "Unkown operator: " operator))))))))
 
 (defn parse-rule [rule-id rule-info]
   (let [datasource (get rule-info "datasource")
@@ -101,27 +108,35 @@
         field (get rule-info "field")
         filters (get rule-info "filters")]
     (Rule. rule-id
-           datasource
-           rule-type
+           (if (get @datasources datasource)
+             datasource
+             (throw (Exception. (str "Invalid datasource: " datasource))))
+           (if (#{:count :unique :average :ninety} rule-type)
+             rule-type
+             (throw (Exception. (str "Invalid rule-type: " rule-type))))
            (cond
              (= :count rule-type) nil
              (= :unique rule-type) field
 
-             (some #{rule-type} [:average :ninety])
+             (#{:average :ninety} rule-type)
              (if (= :numeric (get-in @datasources [datasource field]))
                field
-               (throw (Exception. (str "Invalid field '" field "' for rule-type '" rule-type "'."))))
-
-             :else (throw (Exception. (str "Unkown rule-type: " (name rule-type)))))
+               (throw (Exception. (str "Invalid field: " field)))))
            (for [filter filters]
              (parse-filter datasource filter)))))
 
 (defn parse-rules [rule-map]
-  (let [rules (for [[rule-id-str rule-info-json] rule-map
-                    :let [rule-id (read-string rule-id-str)
-                          rule-info (util/json-decode rule-info-json)]
-                    :when (and (number? rule-id) (not (nil? rule-info)))]
-                (parse-rule rule-id rule-info))
+  (let [rules (for [[rule-id-str rule-info-json] rule-map]
+                (let [rule-id (read-string rule-id-str)
+                      rule-info (util/json-decode rule-info-json)]
+                  (if-not (number? rule-id)
+                    (logging/warn (str "Invalid rule-id " rule-id))
+                    (if (nil? rule-info)
+                      (logging/warn (str "Invalid JSON for rule-id " rule-id))
+                      (try
+                        (parse-rule rule-id rule-info)
+                        (catch Exception e
+                          (logging/error e "Unable to parse rule-id " rule-id)))))))
         rules-filtered (filter (complement nil?) rules)
         rules-grouped (group-by #(:datasource %) rules-filtered)]
     (into {} (for [[datasource rules] rules-grouped]
