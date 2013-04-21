@@ -8,3 +8,8 @@ knowing-db:
   username: ops_monitor
   password: ops_monitor
   database: OPS_Monitor
+
+accesslog-path: /user/hadoop/alog/p_year={yyyy}/p_month={MM}/p_day={dd}/p_hour={HH}/
+
+soj-format: com.hadoop.mapreduce.LzoTextInputFormat
+soj-path: /user/hadoop/soj/{yyyy}{MM}{dd}/
