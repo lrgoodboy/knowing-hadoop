@@ -16,5 +16,6 @@ pom.xml.asc
 /.classpath
 /.settings
 
+/resources/override
 /test_logs
 /test_result

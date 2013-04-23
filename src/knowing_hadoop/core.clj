@@ -60,8 +60,8 @@
 (defn -main [& args]
 
   (let [date (parse-date (first args))]
-    (parse-accesslog-path (util/get-config :override :accesslog-path) date)
-    (parse-soj-path (util/get-config :override :soj-path) date))
+    (parse-accesslog-path (util/get-config :hdfs :accesslog-path) date)
+    (parse-soj-path (util/get-config :hdfs :soj-path) date))
 
   (run {:map "knowing-hadoop.accesslog/mapper"
         :map-reader "clojure-hadoop.wrap/int-string-map-reader"

@@ -4,7 +4,10 @@
         knowing-hadoop.util))
 
 (deftest get-config-test
-  (is (get-config :common)))
+  (let [conf-database (get-config :database)]
+    (is (map? conf-database))
+    (is (= (:knowing-db conf-database)
+           (get-config :database :knowing-db)))))
 
 (deftest split-line-test
   (is (= "bb" (second (split-line "aa\tbb"))))

@@ -1,6 +1,5 @@
 (ns knowing-hadoop.util
-  (:require [clj-yaml.core :as yaml]
-            [clojure.data.json :as json]
+  (:require [clojure.data.json :as json]
             [clj-time.core]
             [clj-time.format]
             [clj-time.local])
@@ -10,10 +9,15 @@
 (def ^:private config (atom {}))
 
 (defn- read-config [section]
-  {:post [(map? %)]}
-  (let [filename (str (name section) ".yaml")]
-    (yaml/parse-string
-      (slurp (clojure.java.io/resource filename)))))
+  (let [read (fn [res-path]
+               {:post [(map? %)]}
+               (if-let [res (clojure.java.io/resource res-path)]
+                 (read-string (slurp res))
+                 {}))
+        default-name (str (name section) ".clj")
+        default (read default-name)
+        override (read (str "override/" default-name))]
+    (merge default override)))
 
 (defn get-config
 
@@ -63,7 +67,7 @@
 
 (defn zk-connect []
   (let [client (CuratorFrameworkFactory/newClient
-                 (clojure.string/join "," (get-config :override :hosts))
+                 (clojure.string/join "," (get-config :zookeeper :hosts))
                  (RetryUntilElapsed. 3000 1000))]
     (.start client)
     client))

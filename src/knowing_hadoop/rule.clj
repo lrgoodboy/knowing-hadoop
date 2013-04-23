@@ -1,9 +1,11 @@
 (ns knowing-hadoop.rule
   (:require [knowing-hadoop.util :as util]
-            [clojure.tools.logging :as logging]))
+            [clojure.tools.logging :as logging]
+            [clj-yaml.core :as yaml]))
 
 (defn get-datasources []
-  (let [datasources (util/get-config :datasources)]
+  (let [datasources (yaml/parse-string
+                      (slurp (clojure.java.io/resource "datasources.yaml")))]
     (into {} (for [[datasource fields] datasources]
                [(name datasource)
                 (into {} (for [[field type] fields]
@@ -136,7 +138,7 @@
                       (try
                         (parse-rule rule-id rule-info)
                         (catch Exception e
-                          (logging/error e "Unable to parse rule-id " rule-id)))))))
+                          (logging/error "Unable to parse rule-id " rule-id)))))))
         rules-filtered (filter (complement nil?) rules)
         rules-grouped (group-by #(:datasource %) rules-filtered)]
     (into {} (for [[datasource rules] rules-grouped]
@@ -145,7 +147,7 @@
                            [(:id rule) rule]))]))))
 
 (defn get-rules []
-  (let [rule-path (util/get-config :common :rule-path)
+  (let [rule-path (util/get-config :zookeeper :rule-path)
         children (util/zk-get-children rule-path)
         rules (parse-rules children)]
     (if (seq rules)
