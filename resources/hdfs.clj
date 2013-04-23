@@ -1,4 +1,4 @@
-{:accesslog-path "test_logs/access_log"
+{:accesslog-input-path "test_logs/access_log/"
 
- :soj-format "text"
- :soj-path "test_logs/soj/"}
+ :soj-input-format "text"
+ :soj-input-path "test_logs/soj/"}

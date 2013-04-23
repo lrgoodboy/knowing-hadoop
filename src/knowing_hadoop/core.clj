@@ -4,31 +4,33 @@
             [clj-time.format]
             [clj-time.local]
             [clojure.tools.logging :as logging]
-            [knowing-hadoop.util :as util])
+            [knowing-hadoop.util :as util]
+            [clojure-hadoop.filesystem])
   (:use [clojure-hadoop.job :only [run]]))
 
-(defn process-file [filename]
+(defn process-file [filename date]
   (with-open [rdr (clojure.java.io/reader filename)]
     (doall (for [line (line-seq rdr)
                  :let [matches (re-matches #"^([0-9]+)\t([0-9]+)$" line)]
                  :when matches]
              {"f_ds_id" (read-string (nth matches 1))
               "f_data" (read-string (nth matches 2))
-              "f_time" "2013-04-16"}))))
+              "f_time" (clj-time.format/unparse-local (:date clj-time.format/formatters) date)}))))
 
-(defn process-files [filenames]
+(defn process-files [filenames date]
   (database/add-chartdata-daily!
     (apply concat (for [filename filenames]
-                    (process-file filename)))))
+                    (process-file filename date)))))
 
-(defn get-filenames-single [directory]
+(defn get-filenames [directory]
   (for [file (file-seq (clojure.java.io/file directory))
         :when (.. file getName (startsWith "part"))]
     (.getPath file)))
 
-(defn get-filenames [directories]
-  (apply concat (for [directory directories]
-                  (get-filenames-single directory))))
+(defn persist-data [directory date]
+  (let [filenames (get-filenames directory)
+        result (process-files filenames date)]
+    (logging/info (count result) "rows inserted.")))
 
 (defn replace-ymd [input date]
   (-> input
@@ -51,39 +53,43 @@
 (defn parse-date [date-str]
   (if-not (clojure.string/blank? date-str)
     (try
-      (clj-time.format/parse-local-date (clj-time.format/formatter-local "yyyy-MM-dd") date-str)
+      (clj-time.format/parse-local-date (:date clj-time.format/formatters) date-str)
       (catch Exception e
         (logging/error "Invalid date: " date-str)
         (System/exit 1)))
-    (clj-time.core/today)))
+    (clj-time.core/minus (clj-time.core/today) (clj-time.core/days 1))))
 
 (defn -main [& args]
 
-  (let [date (parse-date (first args))]
-    (parse-accesslog-path (util/get-config :hdfs :accesslog-path) date)
-    (parse-soj-path (util/get-config :hdfs :soj-path) date))
+  (let [date (parse-date (first args))
+        accesslog-path (parse-accesslog-path (util/get-config :hdfs :accesslog-input-path) date)
+        soj-path (parse-soj-path (util/get-config :hdfs :soj-input-path) date)
+        tmp-path (str "/tmp/knowing-hadoop/ts-" (util/millitime))]
 
-  (run {:map "knowing-hadoop.accesslog/mapper"
-        :map-reader "clojure-hadoop.wrap/int-string-map-reader"
-        :reduce "knowing-hadoop.accesslog/reducer"
-        :input-format "text"
-        :output-format "text"
-        :compress-output "false"
-        :replace "true"
-        :input "test_logs/access_log"
-        :output "test_result/access_log"})
+    (logging/info "Date:" (clj-time.format/unparse-local (:date clj-time.format/formatters) date))
+    (logging/info "Processing access log in path:" accesslog-path)
+    (run {:map "knowing-hadoop.accesslog/mapper"
+          :map-reader "clojure-hadoop.wrap/int-string-map-reader"
+          :reduce "knowing-hadoop.accesslog/reducer"
+          :input-format "text"
+          :output-format "text"
+          :compress-output "false"
+          :replace "true"
+          :input accesslog-path
+          :output (str tmp-path "/access_log")})
+    (persist-data (str tmp-path "/access_log") date)
 
-  (run {:map "knowing-hadoop.soj/mapper"
-        :map-reader "clojure-hadoop.wrap/int-string-map-reader"
-        :reduce "knowing-hadoop.soj/reducer"
-        :input-format "text"
-        :output-format "text"
-        :compress-output "false"
-        :replace "true"
-        :input "test_logs/soj"
-        :output "test_result/soj"})
+    (logging/info "Processing soj in path:" soj-path)
+    (run {:map "knowing-hadoop.soj/mapper"
+          :map-reader "clojure-hadoop.wrap/int-string-map-reader"
+          :reduce "knowing-hadoop.soj/reducer"
+          :input-format (util/get-config :hdfs :soj-input-format)
+          :output-format "text"
+          :compress-output "false"
+          :replace "true"
+          :input soj-path
+          :output (str tmp-path "/soj")})
+    (persist-data (str tmp-path "/soj") date)
 
-  (let [filenames (get-filenames ["test_result/access_log"
-                                  "test_result/soj"])
-        result (process-files filenames)]
-    (println (count result) "rows inserted.")))
+    (logging/info "Deleting temporary path:" tmp-path)
+    (clojure-hadoop.filesystem/delete tmp-path)))

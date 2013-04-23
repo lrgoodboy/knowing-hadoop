@@ -2,7 +2,8 @@
   (:require [clojure.data.json :as json]
             [clj-time.core]
             [clj-time.format]
-            [clj-time.local])
+            [clj-time.local]
+            [clj-time.coerce])
   (:import [com.netflix.curator.framework CuratorFrameworkFactory]
            [com.netflix.curator.retry RetryUntilElapsed]))
 
@@ -64,6 +65,10 @@
                                    (clj-time.core/day now)
                                    (clj-time.core/hour now)
                                    (clj-time.core/minute now))))
+
+(defn millitime []
+  (let [now (clj-time.local/local-now)]
+    (clj-time.coerce/to-long now)))
 
 (defn zk-connect []
   (let [client (CuratorFrameworkFactory/newClient

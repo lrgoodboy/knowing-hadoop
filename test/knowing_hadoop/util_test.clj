@@ -17,6 +17,9 @@
 (deftest current-minute-test
   (is (= 0 (clj-time.core/sec (current-minute)))))
 
+(deftest millitime-test
+  (is (pos? (millitime))))
+
 (deftest zk-connect-test
   (is (.isStarted @zk-client)))
 
