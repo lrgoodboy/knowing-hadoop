@@ -7,7 +7,8 @@
             [knowing-hadoop.util :as util]
             [knowing-hadoop.rule :as rule]
             [clojure-hadoop.filesystem])
-  (:use [clojure-hadoop.job :only [run]]))
+  (:use [clojure-hadoop.job :only [run]])
+  (:gen-class))
 
 (defn parse-ymd [date-str]
   (clj-time.format/parse-local-date (:date clj-time.format/formatters) date-str))
