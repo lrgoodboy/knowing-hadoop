@@ -67,8 +67,11 @@
                                    (clj-time.core/minute now))))
 
 (defn millitime []
-  (let [now (clj-time.local/local-now)]
+  (let [now (clj-time.local/local-now)] ; (local-now) returns a DateTime object with default timezone.
     (clj-time.coerce/to-long now)))
+
+(defn yesterday []
+  (clj-time.core/minus (clj-time.core/today) (clj-time.core/days 1)))
 
 (defn zk-connect []
   (let [client (CuratorFrameworkFactory/newClient

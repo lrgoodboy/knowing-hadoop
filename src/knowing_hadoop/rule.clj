@@ -1,7 +1,8 @@
 (ns knowing-hadoop.rule
   (:require [knowing-hadoop.util :as util]
             [clojure.tools.logging :as logging]
-            [clj-yaml.core :as yaml]))
+            [clj-yaml.core :as yaml]
+            [clj-time.format]))
 
 (defn get-datasources []
   (let [datasources (yaml/parse-string
@@ -15,6 +16,7 @@
 
 (declare ^:dynamic *datasource*)
 (declare ^:dynamic *log*)
+(declare ^:dynamic *date*)
 
 (defrecord Rule
   [id datasource rule-type field filters])
@@ -68,64 +70,93 @@
            (some #{rule-type} [:unique :average :ninety])
            (get log (:field rule)))]))))
 
+(defn peak-time-filter [datasource]
+  (when (bound? #'*date*)
+    (case datasource
+      "access_log" [(Filter. "time_local" :startswith false
+                             (clj-time.format/unparse-local
+                               (clj-time.format/formatter-local "dd/MMM/yyyy:09:") *date*))]
+      "soj" (letfn [(hour [h] (.. (clj-time.core/local-date-time (clj-time.core/year *date*)
+                                                                 (clj-time.core/month *date*)
+                                                                 (clj-time.core/day *date*)
+                                                                 h)
+                                toDateTime getMillis))]
+                   [(Filter. "stamp" :gte nil (hour 9))
+                    (Filter. "stamp" :lt nil (hour 10))]))))
+
 (defn parse-filter [datasource filter]
   (let [field (nth filter 0)
         field-type (get-in @datasources [datasource field])
         operator (keyword (nth filter 1))
         negative (nth filter 2)
         content (nth filter 3)]
-    (Filter. field
-             (case field-type
-               :string (if (#{:equals :contains :startswith :endswith :regex :in} operator)
-                         operator
-                         (throw (Exception. (str "Invalid operator: " operator))))
-               :numeric (if (#{:eq :neq :gt :gte :lt :lte :in :nin} operator)
-                          operator
-                          (throw (Exception. (str "invalid operator: " operator)))))
-             (case field-type
-               :string (true? negative)
-               :numeric nil)
-             (case field-type
-               :string (cond
-                         (#{:equals :contains :startswith :endswith} operator)
-                         content
+    (Filter.
+      ; field
+      field
+      ; operator
+      (case field-type
+        :string (if (#{:equals :contains :startswith :endswith :regex :in} operator)
+                  operator
+                  (throw (Exception. (str "Invalid operator: " operator))))
+        :numeric (if (#{:eq :neq :gt :gte :lt :lte :in :nin} operator)
+                   operator
+                   (throw (Exception. (str "invalid operator: " operator)))))
+      ; negative
+      (case field-type
+        :string (true? negative)
+        :numeric nil)
+      ; content
+      (case field-type
+        :string (cond
+                  (#{:equals :contains :startswith :endswith} operator)
+                  content
 
-                         (= :regex operator) (re-pattern content)
-                         (= :in operator) (seq content)
+                  (= :regex operator) (re-pattern content)
+                  (= :in operator) (seq content)
 
-                         :else (throw (Exception. (str "Unkown operator: " operator))))
+                  :else (throw (Exception. (str "Unkown operator: " operator))))
 
-               :numeric (cond
-                          (#{:eq :neq :gt :gte :lt :lte} operator)
-                          content
+        :numeric (cond
+                   (#{:eq :neq :gt :gte :lt :lte} operator)
+                   content
 
-                          (#{:in :nin} operator)
-                          (seq content)
+                   (#{:in :nin} operator)
+                   (seq content)
 
-                          :else (throw (Exception. (str "Unkown operator: " operator))))))))
+                   :else (throw (Exception. (str "Unkown operator: " operator))))))))
 
 (defn parse-rule [rule-id rule-info]
   (let [datasource (get rule-info "datasource")
         rule-type (keyword (get rule-info "rule_type"))
         field (get rule-info "field")
         filters (get rule-info "filters")]
-    (Rule. rule-id
-           (if (get @datasources datasource)
-             datasource
-             (throw (Exception. (str "Invalid datasource: " datasource))))
-           (if (#{:count :unique :average :ninety} rule-type)
-             rule-type
-             (throw (Exception. (str "Invalid rule-type: " rule-type))))
-           (cond
-             (= :count rule-type) nil
-             (= :unique rule-type) field
+    (when (or (not (bound? #'*date*)) (not= :count rule-type))
+      (Rule.
+        ; rule-id
+        rule-id
+        ; datasource
+        (if (get @datasources datasource)
+          datasource
+          (throw (Exception. (str "Invalid datasource: " datasource))))
+        ; rule-type
+        (if (#{:count :unique :average :ninety} rule-type)
+          rule-type
+          (throw (Exception. (str "Invalid rule-type: " rule-type))))
+        ; field
+        (cond
+          (= :count rule-type) nil
+          (= :unique rule-type) field
 
-             (#{:average :ninety} rule-type)
-             (if (= :numeric (get-in @datasources [datasource field]))
-               field
-               (throw (Exception. (str "Invalid field: " field)))))
-           (for [filter filters]
-             (parse-filter datasource filter)))))
+          (#{:average :ninety} rule-type)
+          (if (= :numeric (get-in @datasources [datasource field]))
+            field
+            (throw (Exception. (str "Invalid field: " field)))))
+        ; filters
+        (let [filters (for [filter filters]
+                        (parse-filter datasource filter))]
+          (if (#{:average :ninety} rule-type)
+            (concat (peak-time-filter datasource) filters)
+            filters))))))
 
 (defn parse-rules [rule-map]
   (let [rules (for [[rule-id-str rule-info-json] rule-map]

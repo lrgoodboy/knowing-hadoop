@@ -1,5 +1,6 @@
 (ns knowing-hadoop.rule-test
-  (:require [knowing-hadoop.util :as util])
+  (:require [knowing-hadoop.util :as util]
+            [clj-time.core])
   (:use clojure.test
         knowing-hadoop.rule))
 
@@ -85,3 +86,15 @@
     (is (= 2 (get-result 2 ["1.2.3.4" "1.2.3.4" "5.6.7.8"])))
     (is (= 1500 (get-result 3 ["1" "2"])))
     (is (= 9000 (get-result 4 (map str (range 1 11)))))))
+
+(deftest peak-time-filter-test
+  (binding [*date* (clj-time.core/local-date-time 2013 4 23)]
+    (let [filter (first (peak-time-filter "access_log"))]
+      (is (= (:field filter) "time_local"))
+      (is (= "23/Apr/2013:09:" (:content filter))))
+    (let [[filter1 filter2] (peak-time-filter "soj")]
+      (is (= "stamp" (:field filter1)))
+      (is (= :gte (:operator filter1)))
+      (is (= 1366678800000 (:content filter1)))
+      (is (= :lt (:operator filter2)))
+      (is (= 1366682400000 (:content filter2))))))

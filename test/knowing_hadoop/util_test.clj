@@ -20,6 +20,10 @@
 (deftest millitime-test
   (is (pos? (millitime))))
 
+(deftest yesterday-test
+  (is (= (clj-time.core/day (clj-time.core/today))
+         (clj-time.core/day (clj-time.core/plus (yesterday) (clj-time.core/days 1))))))
+
 (deftest zk-connect-test
   (is (.isStarted @zk-client)))
 
