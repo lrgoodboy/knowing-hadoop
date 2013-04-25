@@ -197,7 +197,10 @@
             (rule-matches rule log))))
 
 (defn filter-number [values]
-  (filter number? (map read-string values)))
+  (for [value values
+        :let [data (try (Double/valueOf value) (catch Exception e))]
+        :when data]
+    data))
 
 (defn calc-average [values]
   (/ (reduce + values) (count values)))
