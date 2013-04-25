@@ -86,7 +86,8 @@
 
     (logging/info "Date:" date-str)
     (logging/info "Processing access log in path:" accesslog-path)
-    (run {:map "knowing-hadoop.accesslog/mapper"
+    (run {:name "knowing-hadoop.accesslog"
+          :map "knowing-hadoop.accesslog/mapper"
           :map-setup "knowing-hadoop.core/mapper-setup"
           :map-reader "clojure-hadoop.wrap/int-string-map-reader"
           :reduce "knowing-hadoop.accesslog/reducer"
@@ -100,7 +101,8 @@
     (persist-data (str tmp-path "/access_log") date)
 
     (logging/info "Processing soj in path:" soj-path)
-    (run {:map "knowing-hadoop.soj/mapper"
+    (run {:name "knowing-hadoop.soj"
+          :map "knowing-hadoop.soj/mapper"
           :map-setup "knowing-hadoop.core/mapper-setup"
           :map-reader "clojure-hadoop.wrap/int-string-map-reader"
           :reduce "knowing-hadoop.soj/reducer"
