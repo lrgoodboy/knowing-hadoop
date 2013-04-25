@@ -6,7 +6,7 @@
             [clojure.tools.logging :as logging]
             [knowing-hadoop.util :as util]
             [knowing-hadoop.rule :as rule]
-            [clojure-hadoop.filesystem])
+            [clojure-hadoop.filesystem :as fs])
   (:use [clojure-hadoop.job :only [run]])
   (:gen-class))
 
@@ -17,7 +17,7 @@
   (clj-time.format/unparse-local (:date clj-time.format/formatters) date))
 
 (defn process-file [filename date]
-  (with-open [rdr (clojure.java.io/reader filename)]
+  (with-open [rdr (fs/buffered-reader filename)]
     (doall (for [line (line-seq rdr)
                  :let [matches (re-matches #"^([0-9]+)\t([0-9]+)$" line)]
                  :when matches]
@@ -31,9 +31,10 @@
                     (process-file filename date)))))
 
 (defn get-filenames [directory]
-  (for [file (file-seq (clojure.java.io/file directory))
-        :when (.. file getName (startsWith "part"))]
-    (.getPath file)))
+  (for [file-status (.listStatus (fs/filesystem directory) (fs/make-path directory))
+        :let [path (.getPath file-status)]
+        :when (.. path getName (startsWith "part"))]
+    (.. path toUri getPath)))
 
 (defn persist-data [directory date]
   (let [filenames (get-filenames directory)
@@ -113,4 +114,4 @@
     (persist-data (str tmp-path "/soj") date)
 
     (logging/info "Deleting temporary path:" tmp-path)
-    (clojure-hadoop.filesystem/delete tmp-path)))
+    (fs/delete tmp-path)))
