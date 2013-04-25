@@ -203,11 +203,14 @@
     data))
 
 (defn calc-average [values]
-  (/ (reduce + values) (count values)))
+  (if (seq values)
+    (/ (reduce + values) (count values))
+    0))
 
 (defn calc-ninety [values]
-  (let [values-sorted (sort values)]
-    (nth values-sorted (-> values-sorted count (* 0.9) dec))))
+  (if-let [values-sorted (seq (sort values))]
+    (nth values-sorted (-> values-sorted count (* 0.9) dec))
+    0))
 
 (defn collect-result-inner [rule values]
   (let [rule-type (:rule-type rule)]
