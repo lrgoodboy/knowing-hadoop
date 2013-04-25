@@ -27,10 +27,9 @@
     month))
 
 (defn divide-1k [s]
-  (let [n (read-string s)]
-    (if (number? n)
-      (format "%.3f" (/ n 1000.0))
-      s)))
+  (if-let [n (util/parse-double s)]
+    (format "%.3f" (/ n 1000.0))
+    "0"))
 
 (defn parse-log [log]
   (let [arr (util/split-line log)]

@@ -73,6 +73,11 @@
 (defn yesterday []
   (clj-time.core/minus (clj-time.core/today) (clj-time.core/days 1)))
 
+(defn parse-double [x]
+  (try
+    (Double/parseDouble x)
+    (catch Exception e)))
+
 (defn zk-connect []
   (let [client (CuratorFrameworkFactory/newClient
                  (clojure.string/join "," (get-config :zookeeper :hosts))

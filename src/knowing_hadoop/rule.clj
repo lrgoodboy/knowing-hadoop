@@ -50,9 +50,8 @@
         filter-content (:content filter)]
     (case (get-in @datasources [*datasource* field])
       :string (filter-str log-content operator filter-content)
-      :numeric (let [log-content-numeric (read-string log-content)]
-                 (when (number? log-content-numeric)
-                   (filter-num log-content-numeric operator filter-content))))))
+      :numeric (when-let [log-content-numeric (util/parse-double log-content)]
+                 (filter-num log-content-numeric operator filter-content)))))
 
 (defn filter-matches [filter]
   (when-let [content (get *log* (:field filter))]
@@ -198,7 +197,7 @@
 
 (defn filter-number [values]
   (for [value values
-        :let [data (try (Double/valueOf value) (catch Exception e))]
+        :let [data (util/parse-double value)]
         :when data]
     data))
 
