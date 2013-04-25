@@ -1,5 +1,6 @@
 (ns knowing-hadoop.accesslog
-  (:require [knowing-hadoop.util :as util]
+  (:require [clojure-hadoop.job]
+            [knowing-hadoop.util :as util]
             [knowing-hadoop.rule :as rule]))
 
 ;; '$request_time $upstream_response_time $remote_addr $request_length $upstream_addr  [$time_local] '

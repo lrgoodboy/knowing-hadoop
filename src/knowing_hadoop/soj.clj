@@ -1,5 +1,6 @@
 (ns knowing-hadoop.soj
-  (:require [knowing-hadoop.util :as util]
+  (:require [clojure-hadoop.job]
+            [knowing-hadoop.util :as util]
             [knowing-hadoop.rule :as rule]))
 
 (defn parse-log [log]
