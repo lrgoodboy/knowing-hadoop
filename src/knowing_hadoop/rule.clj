@@ -221,3 +221,7 @@
 
 (defn collect-result [datasource rule-id values]
   (collect-result-inner (get-in @rules [datasource rule-id]) values))
+
+(defn bind-date [context]
+  (let [date (util/parse-ymd (.. context getConfiguration (get "custom-date")))]
+    (alter-var-root #'*date* (fn [_] date))))

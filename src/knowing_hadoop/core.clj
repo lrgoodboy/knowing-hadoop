@@ -1,20 +1,12 @@
 (ns knowing-hadoop.core
   (:require [knowing-hadoop.database :as database]
             [clj-time.core]
-            [clj-time.format]
-            [clj-time.local]
             [clojure.tools.logging :as logging]
             [knowing-hadoop.util :as util]
             [knowing-hadoop.rule :as rule]
             [clojure-hadoop.filesystem :as fs])
   (:use [clojure-hadoop.job :only [run]])
   (:gen-class))
-
-(defn parse-ymd [date-str]
-  (clj-time.format/parse-local-date (:date clj-time.format/formatters) date-str))
-
-(defn unparse-ymd [date]
-  (clj-time.format/unparse-local (:date clj-time.format/formatters) date))
 
 (defn process-file [filename date]
   (with-open [rdr (fs/buffered-reader filename)]
@@ -23,7 +15,7 @@
                  :when matches]
              {"f_ds_id" (read-string (nth matches 1))
               "f_data" (read-string (nth matches 2))
-              "f_time" (unparse-ymd date)}))))
+              "f_time" (util/unparse-ymd date)}))))
 
 (defn process-files [filenames date]
   (database/add-chartdata-daily!
@@ -62,15 +54,11 @@
 (defn parse-date [date-str]
   (if-not (clojure.string/blank? date-str)
     (try
-      (parse-ymd date-str)
+      (util/parse-ymd date-str)
       (catch Exception e
         (logging/error "Invalid date: " date-str)
         (System/exit 1)))
     (util/yesterday)))
-
-(defn mapper-setup [context]
-  (let [date (parse-ymd (.. context getConfiguration (get "custom-date")))]
-    (alter-var-root #'rule/*date* (fn [_] date))))
 
 (def job-params {"mapred.job.reuse.jvm.num.tasks" "-1"
                  "mapred.reduce.tasks" (util/get-config :hdfs :reduce-tasks)})
@@ -78,7 +66,7 @@
 (defn -main [& args]
 
   (let [date (parse-date (first args))
-        date-str (unparse-ymd date)
+        date-str (util/unparse-ymd date)
         accesslog-path (parse-accesslog-path (util/get-config :hdfs :accesslog-input-path) date)
         soj-path (parse-soj-path (util/get-config :hdfs :soj-input-path) date)
         tmp-path (str "/tmp/knowing-hadoop/ts-" (util/millitime))]
@@ -89,10 +77,11 @@
     (logging/info "Processing access log in path:" accesslog-path)
     (run {:name "knowing-hadoop.accesslog"
           :map "knowing-hadoop.accesslog/mapper"
-          :map-setup "knowing-hadoop.core/mapper-setup"
+          :map-setup "knowing-hadoop.accesslog/mapper-setup"
+          :map-cleanup "knowing-hadoop.accesslog/mapper-cleanup"
           :map-reader "clojure-hadoop.wrap/int-string-map-reader"
           :reduce "knowing-hadoop.accesslog/reducer"
-          :reduce-setup "knowing-hadoop.core/mapper-setup"
+          :reduce-setup "knowing-hadoop.accesslog/reducer-setup"
           :input-format "text"
           :output-format "text"
           :compress-output "false"
@@ -105,10 +94,11 @@
     (logging/info "Processing soj in path:" soj-path)
     (run {:name "knowing-hadoop.soj"
           :map "knowing-hadoop.soj/mapper"
-          :map-setup "knowing-hadoop.core/mapper-setup"
+          :map-setup "knowing-hadoop.soj/mapper-setup"
+          :map-cleanup "knowing-hadoop.soj/mapper-cleanup"
           :map-reader "clojure-hadoop.wrap/int-string-map-reader"
           :reduce "knowing-hadoop.soj/reducer"
-          :reduce-setup "knowing-hadoop.core/mapper-setup"
+          :reduce-setup "knowing-hadoop.soj/reducer-setup"
           :input-format (util/get-config :hdfs :soj-input-format)
           :output-format "text"
           :compress-output "false"

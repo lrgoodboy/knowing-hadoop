@@ -62,5 +62,14 @@
   (when-let [log (parse-log value)]
     (rule/filter-log "access_log" log)))
 
+(defn mapper-setup [context]
+  (rule/bind-date context))
+
+(defn mapper-cleanup [context]
+  )
+
 (defn reducer [key values-fn]
   [[key (rule/collect-result "access_log" key (values-fn))]])
+
+(defn reducer-setup [context]
+  (rule/bind-date context))
