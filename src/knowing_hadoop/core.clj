@@ -72,7 +72,8 @@
   (let [date (parse-ymd (.. context getConfiguration (get "custom-date")))]
     (alter-var-root #'rule/*date* (fn [_] date))))
 
-(def job-params {"mapred.job.reuse.jvm.num.tasks" "-1"})
+(def job-params {"mapred.job.reuse.jvm.num.tasks" "-1"
+                 "mapred.reduce.tasks" (util/get-config :hdfs :reduce-tasks)})
 
 (defn -main [& args]
 
