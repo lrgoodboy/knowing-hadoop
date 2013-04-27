@@ -63,10 +63,11 @@
     (rule/filter-log "access_log" log)))
 
 (defn mapper-setup [context]
-  (rule/bind-date context))
+  (rule/bind-date context)
+  (rule/clear-result))
 
 (defn mapper-cleanup [context]
-  )
+  (rule/write-result context))
 
 (defn reducer [key values-fn]
   [[key (rule/collect-result "access_log" key (values-fn))]])

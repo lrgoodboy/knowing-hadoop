@@ -2,7 +2,8 @@
   (:require [knowing-hadoop.util :as util]
             [clojure.tools.logging :as logging]
             [clj-yaml.core :as yaml]
-            [clj-time.format]))
+            [clj-time.format])
+  (:import [org.apache.hadoop.io Text]))
 
 (defn get-datasources []
   (let [datasources (yaml/parse-string
@@ -226,7 +227,7 @@
 (defn collect-result-inner [rule values]
   (let [rule-type (:rule-type rule)]
     (case rule-type
-      :count (-> values count long)
+      :count (-> (reduce + values) long)
       :unique (-> values set count long)
       :average (-> values filter-number calc-average (* 1e3) long)
       :ninety (-> values filter-number calc-ninety (* 1e3) long))))
@@ -240,3 +241,14 @@
 (defn bind-date [context]
   (let [date (util/parse-ymd (.. context getConfiguration (get "custom-date")))]
     (alter-var-root #'*date* (fn [_] date))))
+
+(defn clear-result []
+  (dosync (ref-set result {})))
+
+(defn write-result [context]
+  (binding [*print-dup* true]
+    (doseq [[rule-id rule-result] @result]
+      (if (coll? rule-result)
+        (doseq [value rule-result]
+          (.write context (Text. (pr-str rule-id)) (Text. (pr-str value))))
+        (.write context (Text. (pr-str rule-id)) (Text. (pr-str rule-result)))))))
