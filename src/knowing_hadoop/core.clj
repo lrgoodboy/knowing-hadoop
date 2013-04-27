@@ -72,7 +72,7 @@
   (let [date (parse-ymd (.. context getConfiguration (get "custom-date")))]
     (alter-var-root #'rule/*date* (fn [_] date))))
 
-(def job-params {})
+(def job-params {"mapred.job.reuse.jvm.num.tasks" "-1"})
 
 (defn -main [& args]
 
