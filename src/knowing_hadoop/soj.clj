@@ -12,5 +12,15 @@
   (when-let [log (parse-log value)]
     (rule/filter-log "soj" log)))
 
+(defn mapper-setup [context]
+  (rule/bind-date context)
+  (rule/clear-result))
+
+(defn mapper-cleanup [context]
+  (rule/write-result context))
+
 (defn reducer [key values-fn]
   [[key (rule/collect-result "soj" key (values-fn))]])
+
+(defn reducer-setup [context]
+  (rule/bind-date context))

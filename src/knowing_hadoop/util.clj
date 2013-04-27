@@ -78,6 +78,12 @@
     (Double/parseDouble x)
     (catch Exception e)))
 
+(defn parse-ymd [date-str]
+  (clj-time.format/parse-local-date (:date clj-time.format/formatters) date-str))
+
+(defn unparse-ymd [date]
+  (clj-time.format/unparse-local (:date clj-time.format/formatters) date))
+
 (defn zk-connect []
   (let [client (CuratorFrameworkFactory/newClient
                  (clojure.string/join "," (get-config :zookeeper :hosts))
