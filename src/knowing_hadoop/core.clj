@@ -92,6 +92,7 @@
           :map-setup "knowing-hadoop.core/mapper-setup"
           :map-reader "clojure-hadoop.wrap/int-string-map-reader"
           :reduce "knowing-hadoop.accesslog/reducer"
+          :reduce-setup "knowing-hadoop.core/mapper-setup"
           :input-format "text"
           :output-format "text"
           :compress-output "false"
@@ -107,6 +108,7 @@
           :map-setup "knowing-hadoop.core/mapper-setup"
           :map-reader "clojure-hadoop.wrap/int-string-map-reader"
           :reduce "knowing-hadoop.soj/reducer"
+          :reduce-setup "knowing-hadoop.core/mapper-setup"
           :input-format (util/get-config :hdfs :soj-input-format)
           :output-format "text"
           :compress-output "false"
