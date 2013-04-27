@@ -67,16 +67,25 @@
       "status" "200"
       "remote_addr" "1.2.3.4"}
    2 {"host" "www.anjuke.com"
-      "status" "301"}})
+      "status" "301"}
+   3 {"upstream_response_time" "0.1"}})
 
 (deftest rule-matches-test
   (let [get-result (fn [rule-id log-id]
                      (let [rule (parse-rule rule-id (get rules-test rule-id))]
                        (rule-matches rule (get logs-test log-id))))]
-    (is (= [1 nil] (get-result 1 1)))
-    (is (nil? (get-result 1 2)))
-    (is (= [2 "1.2.3.4"] (get-result 2 1)))
-    (is (nil? (get-result 2 2)))))
+    (is (true? (get-result 1 1)))
+    (is (false? (get-result 1 2)))
+    (is (true? (get-result 2 1)))
+    (is (false? (get-result 2 2)))))
+
+(deftest alter-result-test
+  (let [get-result (fn [rule-id log-id result]
+                     (let [rule (parse-rule rule-id (get rules-test rule-id))]
+                       (alter-result rule (get logs-test log-id) result)))]
+    (is (= {1 2} (get-result 1 1 {1 1})))
+    (is (= {2 #{"1.2.3.4"} 1 1} (get-result 2 1 {1 1})))
+    (is (= {3 ["1.0" "0.1"]} (get-result 3 3 {3 ["1.0"]})))))
 
 (deftest collect-result-inner-test
   (let [get-result (fn [rule-id values]

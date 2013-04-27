@@ -60,14 +60,7 @@
 
 (defn rule-matches [rule log]
   (binding [*datasource* (:datasource rule) *log* log]
-    (when (every? filter-matches (:filters rule))
-      (let [rule-type (:rule-type rule)]
-        [(:id rule)
-         (cond
-           (= :count rule-type) nil
-
-           (some #{rule-type} [:unique :average :ninety])
-           (get log (:field rule)))]))))
+    (every? filter-matches (:filters rule))))
 
 (defn peak-time-filter [datasource]
   (when (bound? #'*date*)
@@ -190,10 +183,29 @@
 
 (def rules (delay (get-rules)))
 
+(def result (ref {}))
+
+(defn alter-result [rule log result]
+  (let [rule-id (:id rule)
+        rule-type (:rule-type rule)
+        content (get log (:field rule))]
+    (if (contains? result rule-id)
+      (cond
+        (= :count rule-type)
+        (update-in result [rule-id] inc)
+
+        (#{:unique :average :ninety} rule-type)
+        (update-in result [rule-id] conj content))
+      (assoc result rule-id (case rule-type
+                               :count 1
+                               :unique #{content}
+                               :average [content]
+                               :ninety [content])))))
+
 (defn filter-log [datasource log]
-  (filter (complement nil?)
-          (for [[rule-id rule] (get @rules datasource)]
-            (rule-matches rule log))))
+  (doseq [[rule-id rule] (get @rules datasource)
+          :when (rule-matches rule log)]
+    (dosync (alter result (partial alter-result rule log)))))
 
 (defn filter-number [values]
   (for [value values
@@ -221,6 +233,9 @@
 
 (defn collect-result [datasource rule-id values]
   (collect-result-inner (get-in @rules [datasource rule-id]) values))
+
+
+;; functions related to map-reduce job
 
 (defn bind-date [context]
   (let [date (util/parse-ymd (.. context getConfiguration (get "custom-date")))]
