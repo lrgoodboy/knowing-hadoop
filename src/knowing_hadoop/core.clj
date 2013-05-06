@@ -41,9 +41,11 @@
 
 (defn parse-accesslog-path [input date]
   (if (not= -1 (.indexOf input "{"))
-    (clojure.string/join "," (let [input (replace-ymd input date)]
-                               (for [h (range 24)]
-                                 (clojure.string/replace input #"\{HH\}" (format "%02d" h)))))
+    (let [input (replace-ymd input date)]
+      (if (not= -1 (.indexOf input "{HH}"))
+        (clojure.string/join "," (for [h (range 24)]
+                                   (clojure.string/replace input #"\{HH\}" (format "%02d" h))))
+        input))
     input))
 
 (defn parse-soj-path [input date]
