@@ -60,7 +60,9 @@
 
 (defn mapper [key value]
   (when-let [log (parse-log value)]
-    (rule/filter-log "access_log" log)))
+    (util/time-it
+      (rule/filter-log "access_log" log)
+      9999)))
 
 (defn mapper-setup [context]
   (rule/bind-date context)

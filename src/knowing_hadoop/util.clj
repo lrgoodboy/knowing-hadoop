@@ -3,7 +3,8 @@
             [clj-time.core]
             [clj-time.format]
             [clj-time.local]
-            [clj-time.coerce])
+            [clj-time.coerce]
+            [clojure.tools.logging :as logging])
   (:import [com.netflix.curator.framework CuratorFrameworkFactory]
            [com.netflix.curator.retry RetryUntilElapsed]))
 
@@ -83,6 +84,15 @@
 
 (defn unparse-ymd [date]
   (clj-time.format/unparse-local (:date clj-time.format/formatters) date))
+
+(defmacro time-it [expr sampling]
+  `(if (zero? (Math/round (rand ~sampling)))
+     (let [start# (System/nanoTime)
+           ret# ~expr
+           elapsed# (/ (- (System/nanoTime) start#) 1000000.0)]
+       (logging/info (str "Elapsed time: " elapsed# " msecs"))
+       ret#)
+     ~expr))
 
 (defn zk-connect []
   (let [client (CuratorFrameworkFactory/newClient
