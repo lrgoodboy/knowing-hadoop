@@ -72,7 +72,9 @@
   (rule/write-result context))
 
 (defn reducer [key values-fn]
-  [[key (rule/collect-result "access_log" key (values-fn))]])
+  (util/time-it
+    [[key (rule/collect-result "access_log" key (values-fn))]]
+    0))
 
 (defn reducer-setup [context]
   (rule/bind-date context))
