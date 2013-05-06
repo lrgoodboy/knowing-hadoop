@@ -42,6 +42,7 @@
         datasource (get rule-raw "datasource")
         filter (parse-filter datasource (first (get rule-raw "filters")))]
     (is (= :equals (:operator filter)))
+    (is (= :string (:field-type filter)))
     (is (true? (:negative filter))))
   (let [rule-raw (get rules-test 2)
         datasource (get rule-raw "datasource")

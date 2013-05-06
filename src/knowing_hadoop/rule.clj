@@ -15,17 +15,15 @@
 
 (def datasources (delay (get-datasources)))
 
-(declare ^:dynamic *datasource*)
-(declare ^:dynamic *log*)
 (declare ^:dynamic *date*)
 
 (defrecord Rule
   [id datasource rule-type field filters])
 
 (defrecord Filter
-  [field operator negative content])
+  [field field-type operator negative content])
 
-(defn filter-str [a operator b]
+(defn filter-str [^String a operator b]
   (case operator
     :equals (= a b)
     :contains (.contains a b)
@@ -46,27 +44,25 @@
     :nin (not (util/in-array a b))))
 
 (defn filter-matches-inner [filter log-content]
-  (let [field (:field filter)
-        operator (:operator filter)
+  (let [operator (:operator filter)
         filter-content (:content filter)]
-    (case (get-in @datasources [*datasource* field])
+    (case (:field-type filter)
       :string (filter-str log-content operator filter-content)
       :numeric (when-let [log-content-numeric (util/parse-double log-content)]
                  (filter-num log-content-numeric operator filter-content)))))
 
-(defn filter-matches [filter]
-  (when-let [content (get *log* (:field filter))]
+(defn filter-matches [log filter]
+  (when-let [content (get log (:field filter))]
     (let [result (filter-matches-inner filter content)]
       (if (:negative filter) (not result) result))))
 
 (defn rule-matches [rule log]
-  (binding [*datasource* (:datasource rule) *log* log]
-    (every? filter-matches (:filters rule))))
+  (every? (partial filter-matches log) (:filters rule)))
 
 (defn peak-time-filter [datasource]
   (when (bound? #'*date*)
     (case datasource
-      "access_log" [(Filter. "time_local" :startswith false
+      "access_log" [(Filter. "time_local" :string :startswith false
                              (clj-time.format/unparse-local
                                (clj-time.format/formatter-local "dd/MMM/yyyy:09:") *date*))]
       "soj" (letfn [(hour [h] (.. (clj-time.core/local-date-time (clj-time.core/year *date*)
@@ -74,8 +70,8 @@
                                                                  (clj-time.core/day *date*)
                                                                  h)
                                 toDateTime getMillis))]
-                   [(Filter. "stamp" :gte nil (hour 9))
-                    (Filter. "stamp" :lt nil (hour 10))]))))
+                   [(Filter. "stamp" :numeric :gte nil (hour 9))
+                    (Filter. "stamp" :numeric :lt nil (hour 10))]))))
 
 (defn parse-filter [datasource filter]
   (let [field (nth filter 0)
@@ -86,6 +82,8 @@
     (Filter.
       ; field
       field
+      ; field-type
+      field-type
       ; operator
       (case field-type
         :string (if (#{:equals :contains :startswith :endswith :regex :in} operator)
