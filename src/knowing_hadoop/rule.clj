@@ -64,7 +64,7 @@
     (case datasource
       "access_log" [(Filter. "time_local" :string :startswith false
                              (clj-time.format/unparse-local
-                               (clj-time.format/formatter-local "dd/MMM/yyyy:09:") *date*))]
+                               (clj-time.format/formatter-local "dd/MMM/yyyy:10:") *date*))]
       "soj" (letfn [(hour [h] (.. (clj-time.core/local-date-time (clj-time.core/year *date*)
                                                                  (clj-time.core/month *date*)
                                                                  (clj-time.core/day *date*)

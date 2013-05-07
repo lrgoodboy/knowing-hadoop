@@ -101,7 +101,7 @@
   (binding [*date* (clj-time.core/local-date-time 2013 4 23)]
     (let [filter (first (peak-time-filter "access_log"))]
       (is (= (:field filter) "time_local"))
-      (is (= "23/Apr/2013:09:" (:content filter))))
+      (is (= "23/Apr/2013:10:" (:content filter))))
     (let [[filter1 filter2] (peak-time-filter "soj")]
       (is (= "stamp" (:field filter1)))
       (is (= :gte (:operator filter1)))
