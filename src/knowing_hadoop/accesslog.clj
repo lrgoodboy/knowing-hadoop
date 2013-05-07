@@ -32,7 +32,7 @@
     "0"))
 
 (defn parse-log [log]
-  (let [arr (util/split-line log)]
+  (let [arr (vec (util/split-line log))]
     {"request_time" (divide-1k (nth arr 4))
      "upstream_response_time" (divide-1k (nth arr 5))
      "remote_addr" (nth arr 6)
