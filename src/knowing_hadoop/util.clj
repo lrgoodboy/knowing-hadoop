@@ -44,21 +44,6 @@
 (defn in-array [value array]
   ((complement nil?) (some (partial = value) array)))
 
-(defn split-line
-
-  ([line]
-    (split-line line "\t"))
-
-  ([line delim]
-    (split-line line delim 0))
-
-  ([^String line delim from-index]
-    (let [index (.indexOf line delim from-index)]
-      (if (not= -1 index)
-        (cons (subs line from-index index)
-              (lazy-seq (split-line line delim (inc index))))
-        (list (subs line from-index))))))
-
 (defn current-minute []
   (let [now (clj-time.local/local-now)]
     (clj-time.core/local-date-time (clj-time.core/year now)

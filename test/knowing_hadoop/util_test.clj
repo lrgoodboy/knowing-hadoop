@@ -9,11 +9,6 @@
     (is (= (:knowing-db conf-database)
            (get-config :database :knowing-db)))))
 
-(deftest split-line-test
-  (is (= "bb" (second (split-line "aa\tbb"))))
-  (let [delim (str (char 1))]
-    (is (= "" (second (split-line (str "aa" delim delim "bb") delim))))))
-
 (deftest current-minute-test
   (is (= 0 (clj-time.core/sec (current-minute)))))
 
