@@ -52,7 +52,7 @@
   ([line delim]
     (split-line line delim 0))
 
-  ([line delim from-index]
+  ([^String line delim from-index]
     (let [index (.indexOf line delim from-index)]
       (if (not= -1 index)
         (cons (subs line from-index index)
