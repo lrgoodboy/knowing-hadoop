@@ -91,7 +91,7 @@
        (let [start# (System/nanoTime)
              ret# ~expr
              elapsed# (/ (- (System/nanoTime) start#) 1000000.0)]
-         (logging/info (format "%s: %.3f ms" ~label elapsed#))
+         (logging/info (format "Elapsed time - %s: %.3f ms" ~label elapsed#))
          ret#)
        ~expr)))
 
