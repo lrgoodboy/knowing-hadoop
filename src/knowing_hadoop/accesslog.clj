@@ -32,7 +32,7 @@
     "0"))
 
 (defn parse-log [log]
-  (let [arr (util/split-line log)]
+  (let [arr (vec (util/split-line log))]
     {"request_time" (divide-1k (nth arr 4))
      "upstream_response_time" (divide-1k (nth arr 5))
      "remote_addr" (nth arr 6)
@@ -59,22 +59,22 @@
      "cookie_aQQ_ajkguid" (nth arr 18)}))
 
 (defn mapper [key value]
-  (when-let [log (parse-log value)]
-    (util/time-it
-      (rule/filter-log "access_log" log)
-      9999)))
+  (util/time-it "accesslog.mapper"
+                (when-let [log (parse-log value)]
+                  (rule/filter-log "access_log" log))
+                9999))
 
 (defn mapper-setup [context]
   (rule/bind-date context)
   (rule/clear-result))
 
 (defn mapper-cleanup [context]
-  (rule/write-result context))
+  (util/time-it "accesslog.mapper-cleanup"
+                (rule/write-result context)))
 
 (defn reducer [key values-fn]
-  (util/time-it
-    [[key (rule/collect-result "access_log" key (values-fn))]]
-    0))
+  (util/time-it "accesslog.reducer"
+                [[key (rule/collect-result "access_log" key (values-fn))]]))
 
 (defn reducer-setup [context]
   (rule/bind-date context))
