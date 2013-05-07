@@ -105,6 +105,6 @@
     (let [[filter1 filter2] (peak-time-filter "soj")]
       (is (= "stamp" (:field filter1)))
       (is (= :gte (:operator filter1)))
-      (is (= 1366678800000 (:content filter1)))
+      (is (= 1366682400000 (:content filter1)))
       (is (= :lt (:operator filter2)))
-      (is (= 1366682400000 (:content filter2))))))
+      (is (= 1366686000000 (:content filter2))))))

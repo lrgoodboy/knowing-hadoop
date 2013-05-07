@@ -70,8 +70,8 @@
                                                                  (clj-time.core/day *date*)
                                                                  h)
                                 toDateTime getMillis))]
-                   [(Filter. "stamp" :numeric :gte nil (hour 9))
-                    (Filter. "stamp" :numeric :lt nil (hour 10))]))))
+                   [(Filter. "stamp" :numeric :gte nil (hour 10))
+                    (Filter. "stamp" :numeric :lt nil (hour 11))]))))
 
 (defn parse-filter [datasource filter]
   (let [field (nth filter 0)
