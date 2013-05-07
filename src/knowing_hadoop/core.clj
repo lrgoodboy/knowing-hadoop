@@ -63,7 +63,8 @@
     (util/yesterday)))
 
 (def job-params {"mapred.job.reuse.jvm.num.tasks" "-1"
-                 "mapred.reduce.tasks" (util/get-config :hdfs :reduce-tasks)})
+                 "mapred.reduce.tasks" (util/get-config :hdfs :reduce-tasks)
+                 "mapred.min.split.size" (str (* 256 1024 1024))})
 
 (defn -main [& args]
 
