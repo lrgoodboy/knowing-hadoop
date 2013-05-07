@@ -10,19 +10,21 @@
 ;                           "(.*?) \"(.*?) (.*?) (.*?)\" (.*?) (.*?) "
 ;                           "\"(.*?)\" \"(.*?)\" \"(.*?)\" \"(.*?)\" - \"(.*?) (.*?)\"")))
 
-(def month-name
-  {"01" "Jan"
-   "02" "Feb"
-   "03" "Mar"
-   "04" "Apr"
-   "05" "May"
-   "06" "Jun"
-   "07" "Jul"
-   "08" "Aug"
-   "09" "Sep"
-   "10" "Oct"
-   "11" "Nov"
-   "12" "Dec"})
+(defn get-month-name [month]
+  (case month
+    "01" "Jan"
+    "02" "Feb"
+    "03" "Mar"
+    "04" "Apr"
+    "05" "May"
+    "06" "Jun"
+    "07" "Jul"
+    "08" "Aug"
+    "09" "Sep"
+    "10" "Oct"
+    "11" "Nov"
+    "12" "Dec"
+    month))
 
 (defn divide-1k [s]
   (if-let [n (util/parse-double s)]
@@ -37,7 +39,7 @@
      "request_length" nil
      "upstream_addr" (nth arr 7)
      "time_local" (str (nth arr 2) "/"
-                       (month-name (nth arr 20)) "/"
+                       (get-month-name (nth arr 20)) "/"
                        (nth arr 1) ":"
                        (nth arr 0) ":"
                        (nth arr 3) ":"
