@@ -23,7 +23,7 @@
                 (rule/write-result context)))
 
 (defn reducer [key values-fn]
-  (util/time-it "soj.reducer"
+  (util/time-it (str "soj.reducer[" key "]")
                 [[key (rule/collect-result "soj" key (values-fn))]]))
 
 (defn reducer-setup [context]
