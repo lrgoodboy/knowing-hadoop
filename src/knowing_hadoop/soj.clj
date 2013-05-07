@@ -3,7 +3,7 @@
             [knowing-hadoop.util :as util]
             [knowing-hadoop.rule :as rule]))
 
-(defn parse-log [log]
+(defn parse-log [^String log]
   (let [index (.indexOf log ":")]
     (if (not= -1 index)
       (util/json-decode (subs log (inc index))))))

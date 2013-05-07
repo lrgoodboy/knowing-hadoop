@@ -85,14 +85,15 @@
 (defn unparse-ymd [date]
   (clj-time.format/unparse-local (:date clj-time.format/formatters) date))
 
-(defmacro time-it [expr sampling]
-  `(if (zero? (Math/round (rand ~sampling)))
-     (let [start# (System/nanoTime)
-           ret# ~expr
-           elapsed# (/ (- (System/nanoTime) start#) 1000000.0)]
-       (logging/info (str "Elapsed time: " elapsed# " msecs"))
-       ret#)
-     ~expr))
+(defmacro time-it [label expr & [sampling]]
+  (let [sampling (if (nil? sampling) 0 sampling)]
+    `(if (zero? (Math/round (rand ~sampling)))
+       (let [start# (System/nanoTime)
+             ret# ~expr
+             elapsed# (/ (- (System/nanoTime) start#) 1000000.0)]
+         (logging/info (format "%s: %.3f ms" ~label elapsed#))
+         ret#)
+       ~expr)))
 
 (defn zk-connect []
   (let [client (CuratorFrameworkFactory/newClient

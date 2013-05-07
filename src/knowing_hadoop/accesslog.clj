@@ -10,21 +10,19 @@
 ;                           "(.*?) \"(.*?) (.*?) (.*?)\" (.*?) (.*?) "
 ;                           "\"(.*?)\" \"(.*?)\" \"(.*?)\" \"(.*?)\" - \"(.*?) (.*?)\"")))
 
-(defn get-month-name [month]
-  (case month
-    "01" "Jan"
-    "02" "Feb"
-    "03" "Mar"
-    "04" "Apr"
-    "05" "May"
-    "06" "Jun"
-    "07" "Jul"
-    "08" "Aug"
-    "09" "Sep"
-    "10" "Oct"
-    "11" "Nov"
-    "12" "Dec"
-    month))
+(def month-name
+  {"01" "Jan"
+   "02" "Feb"
+   "03" "Mar"
+   "04" "Apr"
+   "05" "May"
+   "06" "Jun"
+   "07" "Jul"
+   "08" "Aug"
+   "09" "Sep"
+   "10" "Oct"
+   "11" "Nov"
+   "12" "Dec"})
 
 (defn divide-1k [s]
   (if-let [n (util/parse-double s)]
@@ -39,7 +37,7 @@
      "request_length" nil
      "upstream_addr" (nth arr 7)
      "time_local" (str (nth arr 2) "/"
-                       (get-month-name (nth arr 20)) "/"
+                       (month-name (nth arr 20)) "/"
                        (nth arr 1) ":"
                        (nth arr 0) ":"
                        (nth arr 3) ":"
@@ -59,22 +57,22 @@
      "cookie_aQQ_ajkguid" (nth arr 18)}))
 
 (defn mapper [key value]
-  (util/time-it
-    (when-let [log (parse-log value)]
-      (rule/filter-log "access_log" log))
-    9999))
+  (util/time-it "accesslog.mapper"
+                (when-let [log (parse-log value)]
+                  (rule/filter-log "access_log" log))
+                9999))
 
 (defn mapper-setup [context]
   (rule/bind-date context)
   (rule/clear-result))
 
 (defn mapper-cleanup [context]
-  (rule/write-result context))
+  (util/time-it "accesslog.mapper-cleanup"
+                (rule/write-result context)))
 
 (defn reducer [key values-fn]
-  (util/time-it
-    [[key (rule/collect-result "access_log" key (values-fn))]]
-    0))
+  (util/time-it "accesslog.reducer"
+                [[key (rule/collect-result "access_log" key (values-fn))]]))
 
 (defn reducer-setup [context]
   (rule/bind-date context))
