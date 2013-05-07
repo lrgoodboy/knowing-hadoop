@@ -59,10 +59,10 @@
      "cookie_aQQ_ajkguid" (nth arr 18)}))
 
 (defn mapper [key value]
-  (when-let [log (parse-log value)]
-    (util/time-it
-      (rule/filter-log "access_log" log)
-      9999)))
+  (util/time-it
+    (when-let [log (parse-log value)]
+      (rule/filter-log "access_log" log))
+    9999))
 
 (defn mapper-setup [context]
   (rule/bind-date context)
