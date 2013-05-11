@@ -245,8 +245,18 @@
 
 (defn write-result [context]
   (binding [*print-dup* true]
-    (doseq [[rule-id rule-result] @result]
-      (if (coll? rule-result)
-        (doseq [value rule-result]
-          (.write context (Text. (pr-str rule-id)) (Text. (pr-str value))))
-        (.write context (Text. (pr-str rule-id)) (Text. (pr-str rule-result)))))))
+    (let [key-text (Text.) val-text (Text.)]
+      (doseq [[rule-id rule-result] @result]
+        (.set key-text (pr-str rule-id))
+        (cond
+          (map? rule-result)
+          (doseq [[k v] rule-result]
+            (.set val-text (pr-str [k v])))
+
+          (set? rule-result)
+          (doseq [v rule-result]
+            (.set val-text (pr-str v)))
+
+          :else
+          (.set val-text (pr-str)))
+        (.write context key-text val-text)))))
