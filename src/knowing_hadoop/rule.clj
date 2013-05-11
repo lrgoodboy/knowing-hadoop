@@ -3,7 +3,8 @@
             [clojure.tools.logging :as logging]
             [clj-yaml.core :as yaml]
             [clj-time.format])
-  (:import [org.apache.hadoop.io Text]))
+  (:import [org.apache.hadoop.io Text]
+           [org.apache.hadoop.mapreduce MapContext]))
 
 (defn get-datasources []
   (let [datasources (yaml/parse-string
@@ -243,20 +244,22 @@
 (defn clear-result []
   (dosync (ref-set result {})))
 
-(defn write-result [context]
+(defn write-result [^MapContext context]
   (binding [*print-dup* true]
-    (let [key-text (Text.) val-text (Text.)]
+    (let [^Text key-text (Text.) ^Text value-text (Text.)
+          write-value (fn [value]
+                        (.set value-text (pr-str value))
+                        (.write context key-text value-text))]
       (doseq [[rule-id rule-result] @result]
         (.set key-text (pr-str rule-id))
         (cond
           (map? rule-result)
           (doseq [[k v] rule-result]
-            (.set val-text (pr-str [k v])))
+            (write-value [k v]))
 
           (set? rule-result)
           (doseq [v rule-result]
-            (.set val-text (pr-str v)))
+            (write-value v))
 
           :else
-          (.set val-text (pr-str)))
-        (.write context key-text val-text)))))
+          (write-value rule-result))))))
