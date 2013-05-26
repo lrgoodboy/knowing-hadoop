@@ -86,7 +86,7 @@
                        (alter-result rule (get logs-test log-id) result)))]
     (is (= {1 2} (get-result 1 1 {1 1})))
     (is (= {2 #{"1.2.3.4"} 1 1} (get-result 2 1 {1 1})))
-    (is (= {3 ["1.0" "0.1"]} (get-result 3 3 {3 ["1.0"]})))))
+    (is (= {3 {"1.0" 1 "0.1" 2}} (get-result 3 3 {3 {"1.0" 1 "0.1" 1}})))))
 
 (deftest collect-result-inner-test
   (let [get-result (fn [rule-id values]

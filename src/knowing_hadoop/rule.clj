@@ -194,13 +194,17 @@
         (= :count rule-type)
         (update-in result [rule-id] inc)
 
-        (#{:unique :average :ninety} rule-type)
-        (update-in result [rule-id] conj content))
+        (= :unique rule-type)
+        (update-in result [rule-id] conj content)
+
+        (#{:average :ninety} rule-type)
+        (update-in result [rule-id] (partial merge-with +) {content 1}))
+
       (assoc result rule-id (case rule-type
-                               :count 1
-                               :unique #{content}
-                               :average [content]
-                               :ninety [content])))))
+                              :count 1
+                              :unique #{content}
+                              :average {content 1}
+                              :ninety {content 1})))))
 
 (defn filter-log [datasource log]
   (doseq [[rule-id rule] (get @rules datasource)
@@ -253,13 +257,13 @@
       (doseq [[rule-id rule-result] @result]
         (.set key-text (pr-str rule-id))
         (cond
-          (map? rule-result)
-          (doseq [[k v] rule-result]
-            (write-value [k v]))
+          (number? rule-result)
+          (write-value rule-result)
 
           (set? rule-result)
           (doseq [v rule-result]
             (write-value v))
 
-          :else
-          (write-value rule-result))))))
+          (map? rule-result)
+          (doseq [[k v] rule-result]
+            (write-value [k v])))))))
