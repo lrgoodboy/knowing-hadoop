@@ -212,28 +212,38 @@
     (dosync (alter result (partial alter-result rule log)))))
 
 (defn filter-number [values]
-  (for [value values
-        :let [data (util/parse-double value)]
-        :when data]
-    data))
+  (for [[v c] values
+        :let [v (util/parse-double v)]
+        :when v]
+    [v c]))
 
 (defn calc-average [values]
-  (if (seq values)
-    (/ (reduce + values) (count values))
-    0))
+  (loop [values (filter-number values) sum 0.0 count 0]
+    (if (seq values)
+      (let [[v c] (first values)]
+        (recur (rest values) (+ sum (* v c)) (+ count c)))
+      (/ sum count))))
 
 (defn calc-ninety [values]
-  (if-let [values-sorted (seq (sort values))]
-    (nth values-sorted (-> values-sorted count (* 0.9) dec))
-    0))
+  (let [values (sort-by first (filter-number values))
+        total (reduce + (for [[v c] values] c))
+        pos-90 (* total 0.9)]
+    (loop [values values count 0]
+      (if (seq values)
+        (let [[v c] (first values)
+              pos-cur (+ count c)]
+          (if (>= pos-cur pos-90)
+            v
+            (recur (rest values) pos-cur)))
+        0))))
 
 (defn collect-result-inner [rule values]
   (let [rule-type (:rule-type rule)]
     (case rule-type
       :count (-> (reduce + values) long)
       :unique (-> values set count long)
-      :average (-> values filter-number calc-average (* 1e3) long)
-      :ninety (-> values filter-number calc-ninety (* 1e3) long))))
+      :average (-> values calc-average (* 1e3) long)
+      :ninety (-> values calc-ninety (* 1e3) long))))
 
 (defn collect-result [datasource rule-id values]
   (collect-result-inner (get-in @rules [datasource rule-id]) values))
