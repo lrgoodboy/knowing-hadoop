@@ -86,7 +86,7 @@
                        (alter-result rule (get logs-test log-id) result)))]
     (is (= {1 2} (get-result 1 1 {1 1})))
     (is (= {2 #{"1.2.3.4"} 1 1} (get-result 2 1 {1 1})))
-    (is (= {3 ["1.0" "0.1"]} (get-result 3 3 {3 ["1.0"]})))))
+    (is (= {3 {"1.0" 1 "0.1" 2}} (get-result 3 3 {3 {"1.0" 1 "0.1" 1}})))))
 
 (deftest collect-result-inner-test
   (let [get-result (fn [rule-id values]
@@ -94,8 +94,8 @@
                        (collect-result-inner rule values)))]
     (is (= 1 (get-result 1 [1])))
     (is (= 2 (get-result 2 ["1.2.3.4" "1.2.3.4" "5.6.7.8"])))
-    (is (= 1500 (get-result 3 ["1" "2"])))
-    (is (= 9000 (get-result 4 (map str (range 1 11)))))))
+    (is (= 1500 (get-result 3 [["1" 1] ["2" 1]])))
+    (is (= 9000 (get-result 4 (for [i (range 1 11)] [(str i) 1]))))))
 
 (deftest peak-time-filter-test
   (binding [*date* (clj-time.core/local-date-time 2013 4 23)]
