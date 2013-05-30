@@ -33,30 +33,30 @@
 
 (defn parse-log [log]
   (let [arr (clojure.string/split log #"\t")]
-    {"request_time" (divide-1k (nth arr 4))
-     "upstream_response_time" (divide-1k (nth arr 5))
-     "remote_addr" (nth arr 6)
+    {"request_time" (divide-1k (get arr 4))
+     "upstream_response_time" (divide-1k (get arr 5))
+     "remote_addr" (get arr 6)
      "request_length" nil
-     "upstream_addr" (nth arr 7)
-     "time_local" (str (nth arr 2) "/"
-                       (get-month-name (nth arr 20)) "/"
-                       (nth arr 1) ":"
-                       (nth arr 0) ":"
-                       (nth arr 3) ":"
-                       (nth arr 19) " "
+     "upstream_addr" (get arr 7)
+     "time_local" (str (get arr 2) "/"
+                       (get-month-name (get arr 20)) "/"
+                       (get arr 1) ":"
+                       (get arr 0) ":"
+                       (get arr 3) ":"
+                       (get arr 19) " "
                        "+0800")
-     "host" (nth arr 8)
-     "request_method" (nth arr 9)
-     "request_url" (nth arr 10)
+     "host" (get arr 8)
+     "request_method" (get arr 9)
+     "request_url" (get arr 10)
      "request_protocol" nil
-     "status" (nth arr 11)
-     "bytes_send" (nth arr 12)
-     "http_referer" (nth arr 13)
-     "http_user_agent" (nth arr 14)
-     "gzip_ratio" (nth arr 15)
-     "http_x_forwarded_for" (nth arr 16)
-     "server_addr" (nth arr 17)
-     "cookie_aQQ_ajkguid" (nth arr 18)}))
+     "status" (get arr 11)
+     "bytes_send" (get arr 12)
+     "http_referer" (get arr 13)
+     "http_user_agent" (get arr 14)
+     "gzip_ratio" (get arr 15)
+     "http_x_forwarded_for" (get arr 16)
+     "server_addr" (get arr 17)
+     "cookie_aQQ_ajkguid" (get arr 18)}))
 
 (defn mapper [key value]
   (util/time-it "accesslog.mapper"
