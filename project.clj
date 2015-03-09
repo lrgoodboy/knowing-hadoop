@@ -8,10 +8,12 @@
                  [com.netflix.curator/curator-framework "1.3.3"]
                  [org.clojure/data.json "0.2.2"]
                  [clj-time "0.5.0"]
-                 [clojure-hadoop "1.4.2"]
+                 [clojure-hadoop "1.4.2" :exclusions [org.apache.hadoop/hadoop-core]]
                  [org.clojure/java.jdbc "0.2.3"]
                  [mysql/mysql-connector-java "5.1.24"]
                  [com.hadoop.gplcompression/hadoop-lzo "0.4.16"]
                  [org.clojure/tools.logging "0.2.6"]]
+  :profiles {:dev {:dependencies [[org.apache.hadoop/hadoop-core "1.0.4"]]}}
   :plugins [[lein2-eclipse "2.0.0"]]
-  :main knowing-hadoop.core)
+  :main knowing-hadoop.core
+  :aot [knowing-hadoop.core])
